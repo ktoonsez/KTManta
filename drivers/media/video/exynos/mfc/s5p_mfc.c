@@ -845,6 +845,8 @@ static int s5p_mfc_open(struct file *file)
 
 	mfc_debug_enter();
 
+	__pm_stay_awake(&dev->mfc_ws);
+
 	node = s5p_mfc_get_node_type(file);
 	if (node == MFCNODE_INVALID) {
 		mfc_err("cannot specify node type\n");
@@ -1035,6 +1037,7 @@ err_ctx_alloc:
 err_drm_playback:
 #endif
 err_node_type:
+	__pm_relax(&dev->mfc_ws);
 	mfc_debug_leave();
 
 	return ret;
@@ -1116,6 +1119,8 @@ static int s5p_mfc_release(struct file *file)
 		kfree(ctx->enc_priv);
 	dev->ctx[ctx->num] = 0;
 	kfree(ctx);
+
+	__pm_relax(&dev->mfc_ws);
 
 	mfc_debug_leave();
 
