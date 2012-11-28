@@ -702,8 +702,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 		rc = sysfs_create_group(cpufreq_global_kobject,
 				&interactive_attr_group);
-		if (rc)
-			return rc;
+		//if (rc)
+		//	return rc;
 
 		idle_notifier_register(&cpufreq_interactive_idle_nb);
 		break;
@@ -728,8 +728,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			return 0;
 
 		idle_notifier_unregister(&cpufreq_interactive_idle_nb);
-		sysfs_remove_group(cpufreq_global_kobject,
-				&interactive_attr_group);
+		//sysfs_remove_group(cpufreq_global_kobject,
+		//		&interactive_attr_group);
 
 		break;
 
