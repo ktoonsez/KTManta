@@ -387,19 +387,6 @@ static void insert_kthread_work(struct kthread_worker *worker,
 		wake_up_process(worker->task);
 }
 
-/* insert @work before @pos in @worker */
-static void insert_kthread_work(struct kthread_worker *worker,
-			       struct kthread_work *work,
-			       struct list_head *pos)
-{
-	lockdep_assert_held(&worker->lock);
-
-	list_add_tail(&work->node, pos);
-	work->worker = worker;
-	if (likely(worker->task))
-		wake_up_process(worker->task);
-}
-
 /**
  * queue_kthread_work - queue a kthread_work
  * @worker: target kthread_worker
@@ -424,18 +411,6 @@ bool queue_kthread_work(struct kthread_worker *worker,
 	return ret;
 }
 EXPORT_SYMBOL_GPL(queue_kthread_work);
-
-struct kthread_flush_work {
-	struct kthread_work	work;
-	struct completion	done;
-};
-
-static void kthread_flush_work_fn(struct kthread_work *work)
-{
-	struct kthread_flush_work *fwork =
-		container_of(work, struct kthread_flush_work, work);
-	complete(&fwork->done);
-}
 
 struct kthread_flush_work {
 	struct kthread_work	work;
