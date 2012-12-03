@@ -97,6 +97,8 @@ static void tmu_monitor(struct work_struct *work)
 	int cur_temp;
 
 	cur_temp = get_cur_temp(info);
+	//pr_alert("GET_CUR_TEMP: c=%d st=%d\n", cur_temp, data->ts.stop_throttle);
+	//pr_info("GET_CUR_TEMP: c=%d st=%d\n", cur_temp, data->ts.stop_throttle); data->ts.stop_throttle = 78
 
 	dev_dbg(info->dev, "Current: %dc, FLAG=%d\n", cur_temp, info->tmu_state);
 
