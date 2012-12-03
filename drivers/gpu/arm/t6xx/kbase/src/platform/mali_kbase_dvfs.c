@@ -589,6 +589,10 @@ void kbase_platform_dvfs_set_clock(kbase_device *kbdev, int freq)
 		return;
 
 	switch(freq) {
+		case 612:
+			gpll_rate = 533000000;
+			aclk_400_rate = 612000000;
+			break;
 		case 533:
 			gpll_rate = 533000000;
 			aclk_400_rate = 533000000;

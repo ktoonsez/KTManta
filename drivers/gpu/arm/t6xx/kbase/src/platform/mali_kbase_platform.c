@@ -302,7 +302,9 @@ static ssize_t set_clock(struct device *dev, struct device_attribute *attr, cons
 	if(!platform->sclk_g3d)
 		return -ENODEV;
 
-	if (sysfs_streq("533", buf)) {
+	if (sysfs_streq("612", buf)) {
+		freq=612;
+	} else if (sysfs_streq("533", buf)) {
 		freq=533;
 	} else if (sysfs_streq("450", buf)) {
 		freq=450;
@@ -762,8 +764,10 @@ static ssize_t set_upper_lock_dvfs(struct device *dev, struct device_attribute *
 #ifdef CONFIG_MALI_T6XX_DVFS
 	if (sysfs_streq("off", buf)) {
 		mali_dvfs_freq_unlock();
-	} else if (sysfs_streq("533", buf)) {
+	} else if (sysfs_streq("612", buf)) {
 		mali_dvfs_freq_unlock();
+	} else if (sysfs_streq("533", buf)) {
+		mali_dvfs_freq_lock(6);
 	} else if (sysfs_streq("450", buf)) {
 		mali_dvfs_freq_lock(5);
 	} else if (sysfs_streq("400", buf)) {
@@ -835,6 +839,8 @@ static ssize_t set_under_lock_dvfs(struct device *dev, struct device_attribute *
 #ifdef CONFIG_MALI_T6XX_DVFS
 	if (sysfs_streq("off", buf)) {
 		mali_dvfs_freq_under_unlock();
+	} else if (sysfs_streq("612", buf)) {
+		mali_dvfs_freq_under_lock(7);
 	} else if (sysfs_streq("533", buf)) {
 		mali_dvfs_freq_under_lock(6);
 	} else if (sysfs_streq("450", buf)) {
