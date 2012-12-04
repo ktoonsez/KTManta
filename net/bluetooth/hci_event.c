@@ -45,6 +45,8 @@
 
 /* Handle HCI Event packets */
 
+extern void set_bluetooth_state(unsigned int val);
+
 static void hci_cc_inquiry_cancel(struct hci_dev *hdev, struct sk_buff *skb)
 {
 	__u8 status = *((__u8 *) skb->data);
@@ -1206,6 +1208,7 @@ static inline void hci_cs_create_conn(struct hci_dev *hdev, __u8 status)
 		if (conn && conn->state == BT_CONNECT) {
 			if (status != 0x0c || conn->attempt > 2) {
 				conn->state = BT_CLOSED;
+				set_bluetooth_state(0);
 				hci_proto_connect_cfm(conn, status);
 				hci_conn_del(conn);
 			} else
@@ -1251,7 +1254,7 @@ static void hci_cs_add_sco(struct hci_dev *hdev, __u8 status)
 		sco = acl->link;
 		if (sco) {
 			sco->state = BT_CLOSED;
-
+			set_bluetooth_state(0);
 			hci_proto_connect_cfm(sco, status);
 			hci_conn_del(sco);
 		}
@@ -1530,7 +1533,7 @@ static void hci_cs_setup_sync_conn(struct hci_dev *hdev, __u8 status)
 		sco = acl->link;
 		if (sco) {
 			sco->state = BT_CLOSED;
-
+			set_bluetooth_state(0);
 			hci_proto_connect_cfm(sco, status);
 			hci_conn_del(sco);
 		}
@@ -1636,6 +1639,7 @@ static void hci_cs_le_create_conn(struct hci_dev *hdev, __u8 status)
 	if (status) {
 		if (conn && conn->state == BT_CONNECT) {
 			conn->state = BT_CLOSED;
+			set_bluetooth_state(0);
 			hci_proto_connect_cfm(conn, status);
 			hci_conn_del(conn);
 		}
@@ -1767,7 +1771,10 @@ static inline void hci_conn_complete_evt(struct hci_dev *hdev, struct sk_buff *s
 			else
 				conn->disc_timeout = HCI_DISCONN_TIMEOUT;
 		} else
+		{
 			conn->state = BT_CONNECTED;
+			set_bluetooth_state(1);
+		}
 
 		hci_conn_hold_device(conn);
 		hci_conn_add_sysfs(conn);
@@ -1796,6 +1803,7 @@ static inline void hci_conn_complete_evt(struct hci_dev *hdev, struct sk_buff *s
 		}
 	} else {
 		conn->state = BT_CLOSED;
+		set_bluetooth_state(0);
 		if (conn->type == ACL_LINK)
 			mgmt_connect_failed(hdev, &ev->bdaddr, conn->type,
 					    conn->dst_type, ev->status);
@@ -1915,8 +1923,11 @@ static inline void hci_disconn_complete_evt(struct hci_dev *hdev, struct sk_buff
 		goto unlock;
 
 	if (ev->status == 0)
+	{
 		conn->state = BT_CLOSED;
-
+		set_bluetooth_state(0);
+	}
+	
 	if (test_and_clear_bit(HCI_CONN_MGMT_CONNECTED, &conn->flags) &&
 			(conn->type == ACL_LINK || conn->type == LE_LINK)) {
 		if (ev->status != 0)
@@ -1976,6 +1987,7 @@ static inline void hci_auth_complete_evt(struct hci_dev *hdev, struct sk_buff *s
 									&cp);
 		} else {
 			conn->state = BT_CONNECTED;
+			set_bluetooth_state(1);
 			hci_proto_connect_cfm(conn, ev->status);
 			hci_conn_put(conn);
 		}
@@ -2074,7 +2086,10 @@ static inline void hci_encrypt_change_evt(struct hci_dev *hdev, struct sk_buff *
 
 		if (conn->state == BT_CONFIG) {
 			if (!ev->status)
+			{
 				conn->state = BT_CONNECTED;
+				set_bluetooth_state(1);
+			}
 
 			hci_proto_connect_cfm(conn, ev->status);
 			hci_conn_put(conn);
@@ -2149,6 +2164,7 @@ static inline void hci_remote_features_evt(struct hci_dev *hdev, struct sk_buff 
 
 	if (!hci_outgoing_auth_needed(hdev, conn)) {
 		conn->state = BT_CONNECTED;
+		set_bluetooth_state(1);
 		hci_proto_connect_cfm(conn, ev->status);
 		hci_conn_put(conn);
 	}
@@ -2918,6 +2934,7 @@ static inline void hci_remote_ext_features_evt(struct hci_dev *hdev, struct sk_b
 
 	if (!hci_outgoing_auth_needed(hdev, conn)) {
 		conn->state = BT_CONNECTED;
+		set_bluetooth_state(1);
 		hci_proto_connect_cfm(conn, ev->status);
 		hci_conn_put(conn);
 	}
@@ -2951,7 +2968,8 @@ static inline void hci_sync_conn_complete_evt(struct hci_dev *hdev, struct sk_bu
 	case 0x00:
 		conn->handle = __le16_to_cpu(ev->handle);
 		conn->state  = BT_CONNECTED;
-
+		set_bluetooth_state(1);
+		
 		hci_conn_hold_device(conn);
 		hci_conn_add_sysfs(conn);
 		break;
@@ -2971,6 +2989,7 @@ static inline void hci_sync_conn_complete_evt(struct hci_dev *hdev, struct sk_bu
 
 	default:
 		conn->state = BT_CLOSED;
+		set_bluetooth_state(0);
 		break;
 	}
 
@@ -3317,6 +3336,7 @@ static inline void hci_le_conn_complete_evt(struct hci_dev *hdev, struct sk_buff
 						conn->dst_type, ev->status);
 		hci_proto_connect_cfm(conn, ev->status);
 		conn->state = BT_CLOSED;
+		set_bluetooth_state(0);
 		hci_conn_del(conn);
 		goto unlock;
 	}
@@ -3328,7 +3348,8 @@ static inline void hci_le_conn_complete_evt(struct hci_dev *hdev, struct sk_buff
 	conn->sec_level = BT_SECURITY_LOW;
 	conn->handle = __le16_to_cpu(ev->handle);
 	conn->state = BT_CONNECTED;
-
+	set_bluetooth_state(1);
+	
 	hci_conn_hold_device(conn);
 	hci_conn_add_sysfs(conn);
 
@@ -3448,18 +3469,22 @@ void hci_event_packet(struct hci_dev *hdev, struct sk_buff *skb)
 
 	case HCI_EV_CONN_COMPLETE:
 		hci_conn_complete_evt(hdev, skb);
+		pr_info("HCI_EV_CONN_COMPLETE\n");
 		break;
 
 	case HCI_EV_CONN_REQUEST:
 		hci_conn_request_evt(hdev, skb);
+		pr_info("HCI_EV_CONN_REQUEST\n");
 		break;
 
 	case HCI_EV_DISCONN_COMPLETE:
 		hci_disconn_complete_evt(hdev, skb);
+		pr_info("HCI_EV_DISCONN_COMPLETE\n");
 		break;
 
 	case HCI_EV_AUTH_COMPLETE:
 		hci_auth_complete_evt(hdev, skb);
+		pr_info("HCI_EV_AUTH_COMPLETE\n");
 		break;
 
 	case HCI_EV_REMOTE_NAME:
@@ -3572,6 +3597,7 @@ void hci_event_packet(struct hci_dev *hdev, struct sk_buff *skb)
 
 	case HCI_EV_SIMPLE_PAIR_COMPLETE:
 		hci_simple_pair_complete_evt(hdev, skb);
+		pr_info("HCI_EV_SIMPLE_PAIR_COMPLETE\n");
 		break;
 
 	case HCI_EV_REMOTE_HOST_FEATURES:

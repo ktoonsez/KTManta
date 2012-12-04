@@ -40,6 +40,8 @@
 
 #define BT_LPM_ENABLE
 
+extern void set_bluetooth_state(unsigned int val);
+
 static struct rfkill *bt_rfkill;
 
 static DEFINE_MUTEX(manta_bt_wlan_sync);
@@ -154,6 +156,7 @@ static int bcm43241_bt_rfkill_set_power(void *data, bool blocked)
 		s3c_gpio_setpull(GPIO_BT_HOST_WAKE, S3C_GPIO_PULL_NONE);
 	} else {
 		pr_info("[BT] Bluetooth Power Off.\n");
+		set_bluetooth_state(0);
 		gpio_set_value(GPIO_BTREG_ON, 0);
 		s3c_gpio_setpull(GPIO_BT_HOST_WAKE, S3C_GPIO_PULL_DOWN);
 	}
