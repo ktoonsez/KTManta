@@ -429,9 +429,48 @@ static ssize_t store_##file_name					\
 	return ret ? ret : count;					\
 }
 
-store_one(scaling_min_freq, min);
-store_one(scaling_max_freq, max);
+//store_one(scaling_min_freq, min);
+//store_one(scaling_max_freq, max);
+static ssize_t store_scaling_min_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+	struct cpufreq_policy new_policy;
 
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);
+	new_policy.min = value;
+	ret = __cpufreq_set_policy(policy, &new_policy);	
+	policy->user_policy.min = policy->min;
+
+	Lbluetooth_scaling_mhz_orig = value;
+
+	return count;
+}
+
+static ssize_t store_scaling_max_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+	struct cpufreq_policy new_policy;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);
+	new_policy.max = value;
+	ret = __cpufreq_set_policy(policy, &new_policy);	
+	policy->user_policy.max = policy->max;
+
+	if (Lscreen_off_scaling_mhz_orig != 800000)
+		Lscreen_off_scaling_mhz_orig = value;
+	
+	return count;
+}
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
  */
@@ -481,14 +520,16 @@ void screen_on_off(struct work_struct *notification_off_work)
 		else
 			bluetooth_overwrote_screen_off = true;
 	}
-	/*else
+	else
 	{
-		if (saved_scaling_max_freq != 0)
-			new_policy.max = saved_scaling_max_freq;		
+		ret = cpufreq_get_policy(&new_policy, policy->cpu);
+		if (Lscreen_off_scaling_mhz_orig != 0)
+			new_policy.max = Lscreen_off_scaling_mhz_orig;		
 		else
 			new_policy.max = 1700000;		
-		
-	}*/
+		ret = __cpufreq_set_policy(policy, &new_policy);	
+		policy->user_policy.max = policy->max;
+	}
 }
 
 static void handle_screen_on_off(unsigned long data)
@@ -544,7 +585,6 @@ void set_bluetooth_state(unsigned int val)
 	{
 		bluetooth_scaling_mhz_active = true;
 		ret = cpufreq_get_policy(&new_policy, policy->cpu);
-		Lbluetooth_scaling_mhz_orig = new_policy.min;
 		new_policy.min = Lbluetooth_scaling_mhz;
 		ret = __cpufreq_set_policy(policy, &new_policy);	
 		policy->user_policy.min = policy->min;
