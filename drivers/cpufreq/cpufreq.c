@@ -67,7 +67,7 @@ static DEFINE_SPINLOCK(cpufreq_driver_lock);
 static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
 static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
 
-static unsigned int Lscreen_off_scaling_mhz = 800000;
+static unsigned int Lscreen_off_scaling_mhz = 0;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1700000;
 static struct timer_list screen_on_off_timer;
 static unsigned long Lonoff = 1;
@@ -466,7 +466,7 @@ static ssize_t store_scaling_max_freq(struct cpufreq_policy *policy, const char 
 	ret = __cpufreq_set_policy(policy, &new_policy);	
 	policy->user_policy.max = policy->max;
 
-	if (Lscreen_off_scaling_mhz_orig != 800000)
+	if (value != 800000 && value != 1700000)
 		Lscreen_off_scaling_mhz_orig = value;
 	
 	return count;
@@ -505,7 +505,7 @@ void screen_on_off(struct work_struct *notification_off_work)
 	struct cpufreq_policy new_policy;
 	unsigned int ret = -EINVAL;
 
-	pr_alert("SET_SCREEN_ON_OFF_MHZ - %lx\n", Lonoff);
+	pr_alert("SET_SCREEN_ON_OFF_MHZ - %lx - so=%d - soo=%d\n", Lonoff, Lscreen_off_scaling_mhz, Lscreen_off_scaling_mhz_orig);
 
 	if (Lonoff == 0 && Lscreen_off_scaling_mhz > 0)
 	{
@@ -520,7 +520,7 @@ void screen_on_off(struct work_struct *notification_off_work)
 		else
 			bluetooth_overwrote_screen_off = true;
 	}
-	else
+	else if (Lonoff == 1 && Lscreen_off_scaling_mhz > 0)
 	{
 		ret = cpufreq_get_policy(&new_policy, policy->cpu);
 		if (Lscreen_off_scaling_mhz_orig != 0)
@@ -540,7 +540,10 @@ static void handle_screen_on_off(unsigned long data)
 void set_screen_on_off_mhz(unsigned long onoff)
 {
 	Lonoff = onoff;
-	mod_timer(&screen_on_off_timer, jiffies + msecs_to_jiffies(5000));
+	if (onoff == 1)
+		mod_timer(&screen_on_off_timer, jiffies + msecs_to_jiffies(1000));
+	else
+		mod_timer(&screen_on_off_timer, jiffies + msecs_to_jiffies(5000));
 }
 
 static ssize_t show_screen_off_scaling_mhz(struct cpufreq_policy *policy, char *buf)
