@@ -551,10 +551,10 @@ int wl_cfg80211_set_btcoex_dhcp(struct net_device *dev, char *command)
 		dhd->dhcp_in_progress = 1;
 
 		/* Disable packet filtering */
-		if (dhd->early_suspended) {
+		//if (dhd->early_suspended) {
 			WL_TRACE_HW4(("DHCP in progressing , disable packet filter!!!\n"));
 			dhd_enable_packet_filter(0, dhd);
-		}
+		//}
 #endif
 
 		/* Retrieve and saved orig regs value */
@@ -606,10 +606,10 @@ int wl_cfg80211_set_btcoex_dhcp(struct net_device *dev, char *command)
 		WL_TRACE_HW4(("%s: DHCP is complete \n", __FUNCTION__));
 
 		/* Enable packet filtering */
-		if (dhd->early_suspended) {
+		//if (dhd->early_suspended) {
 			WL_TRACE_HW4(("DHCP is complete , enable packet filter!!!\n"));
 			dhd_enable_packet_filter(1, dhd);
-		}
+		//}
 #endif
 
 		/* Restoring PM mode */
