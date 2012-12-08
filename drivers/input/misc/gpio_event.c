@@ -113,6 +113,8 @@ static void __maybe_unused gpio_event_resume(struct gpio_event *ip)
 	gpio_event_call_all_func(ip, GPIO_EVENT_FUNC_RESUME);
 }
 
+extern void slide2wake_setdev(struct input_dev *input_device);
+
 static int gpio_event_probe(struct platform_device *pdev)
 {
 	int err;
@@ -160,6 +162,9 @@ static int gpio_event_probe(struct platform_device *pdev)
 					event_info->name : event_info->names[i];
 		input_dev->event = gpio_input_event;
 		ip->input_devs->dev[i] = input_dev;
+		pr_alert("GPIO_EVENT_PROBE=%s", input_dev->name);
+		if (i ==0 )
+			slide2wake_setdev(input_dev);
 	}
 	ip->input_devs->count = dev_count;
 	ip->info = event_info;

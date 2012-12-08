@@ -731,6 +731,58 @@ static void mxt_input_report(struct mxt_data *data)
 	input_sync(input_dev);
 }
 
+static struct input_dev *slide2wake_dev;
+extern void request_suspend_state(int);
+extern int get_suspend_state(void);
+static DEFINE_MUTEX(s2w_lock);
+static DEFINE_SEMAPHORE(s2w_sem);
+bool s2w_enabled = true;
+static unsigned int wake_start_x = 0;
+static unsigned int wake_start_y = 0;
+static unsigned int x_lo;
+static unsigned int x_hi;
+static unsigned int y_lo;
+static unsigned int y_hi;
+
+/*static void slide2wake_force_wakeup(void)
+{
+	int state;
+
+	mutex_lock(&s2w_lock);
+	state = get_suspend_state();
+	printk(KERN_ERR "[TSP] suspend state: %d\n", state);
+	if (state != 0)
+		request_suspend_state(0);
+	msleep(100);
+	mutex_unlock(&s2w_lock);
+}*/
+
+void slide2wake_setdev(struct input_dev *input_device)
+{
+	slide2wake_dev = input_device;
+	pr_alert("SLIDE2WAKE_SETDEV");
+}
+
+static void slide2wake_presspwr(struct work_struct *slide2wake_presspwr_work)
+{
+	pr_alert("SLIDE2WAKE_PRESSPWR");
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 1);
+	input_event(slide2wake_dev, EV_SYN, 0, 0);
+	msleep(100);
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 0);
+	input_event(slide2wake_dev, EV_SYN, 0, 0);
+	msleep(1000);
+	mutex_unlock(&s2w_lock);
+}
+
+static DECLARE_WORK(slide2wake_presspwr_work, slide2wake_presspwr);
+
+void slide2wake_pwrtrigger(void)
+{
+	if (mutex_trylock(&s2w_lock))
+		schedule_work(&slide2wake_presspwr_work);
+}
+
 static void mxt_input_touchevent(struct mxt_data *data,
 				      struct mxt_message *message, int id)
 {
@@ -752,7 +804,7 @@ static void mxt_input_touchevent(struct mxt_data *data,
 	if (!(status & MXT_DETECT)) {
 		if (status & MXT_RELEASE) {
 			dev_dbg(dev, "[%d] released\n", id);
-
+			
 			finger[id].status = MXT_RELEASE;
 			mxt_input_report(data);
 		} else if (status & MXT_SUPPRESS) {
@@ -787,6 +839,34 @@ static void mxt_input_touchevent(struct mxt_data *data,
 	finger[id].pressure = pressure;
 	finger[id].vector = vector;
 
+	if ((status & MXT_PRESS) || (status & MXT_MOVE))
+	{
+		pr_alert("MXT_PRESS");
+		// slide2wake start
+		if (s2w_enabled && x < x_lo)
+		{
+			wake_start_x = 1;
+			pr_alert("SLIDE2WAKE_START_X");
+		}
+		if (s2w_enabled && y < y_lo)
+		{
+			wake_start_y = 1;
+			pr_alert("SLIDE2WAKE_START_Y");
+		}
+	}
+	else
+	{
+		pr_alert("MXT_RELEASE");
+		wake_start_x = 0;
+		wake_start_y = 0;
+	}
+	
+	if ((wake_start_x == 1 && x > x_hi) || (wake_start_y == 1 && y > y_hi))
+	{
+		//slide2wake_force_wakeup();
+		slide2wake_pwrtrigger();
+	}
+	
 	mxt_input_report(data);
 }
 
@@ -1625,12 +1705,38 @@ err_power_on:
 	return count;
 }
 
+static ssize_t slide2wake_show(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", s2w_enabled);
+}
+
+static ssize_t slide2wake_store(struct device *dev,
+				   struct device_attribute *attr,
+				   const char *buf, size_t size)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%d\n", &value);
+
+	if (ret != 1)
+		return -EINVAL;
+	else
+		s2w_enabled = value ? true : false;
+
+	return size;
+}
+
 static DEVICE_ATTR(object, 0444, mxt_object_show, NULL);
 static DEVICE_ATTR(update_fw, 0664, NULL, mxt_update_fw_store);
+static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
+	slide2wake_show, slide2wake_store);
 
 static struct attribute *mxt_attrs[] = {
 	&dev_attr_object.attr,
 	&dev_attr_update_fw.attr,
+	&dev_attr_slide2wake.attr,
 	NULL
 };
 
@@ -1651,7 +1757,12 @@ static int mxt_start(struct mxt_data *data)
 	if (error)
 		dev_err(&data->client->dev, "Fail to start touch\n");
 	else
-		enable_irq(data->irq);
+	{
+		if (s2w_enabled)
+			disable_irq_wake(data->client->irq);
+		else
+			enable_irq(data->irq);
+	}
 
 	return error;
 }
@@ -1664,8 +1775,12 @@ static void mxt_stop(struct mxt_data *data)
 		dev_err(&data->client->dev, "Touch is already stopped\n");
 		return;
 	}
-	disable_irq(data->irq);
-	mxt_power_off(data);
+	if (s2w_enabled)
+		enable_irq_wake(data->client->irq);
+	else
+		disable_irq(data->irq);
+	if (!s2w_enabled)
+		mxt_power_off(data);
 
 	/* release the finger which is remained */
 	for (id = 0; id < MXT_MAX_FINGER; id++) {
@@ -2011,6 +2126,11 @@ static int __devinit mxt_probe(struct i2c_client *client,
 	if (error)
 		goto err_init;
 
+	x_lo = pdata->x_size / 10;	/* 10% display width */
+	x_hi = (pdata->x_size / 10) * 9;	/* 90% display width */
+	y_lo = pdata->y_size / 10;	/* 10% display width */
+	y_hi = (pdata->y_size / 10) * 9;	/* 90% display width */
+	 
 	return 0;
 
 err_init:
