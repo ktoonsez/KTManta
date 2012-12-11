@@ -732,8 +732,8 @@ static void mxt_input_report(struct mxt_data *data)
 }
 
 static struct input_dev *slide2wake_dev;
-extern void request_suspend_state(int);
-extern int get_suspend_state(void);
+//extern void request_suspend_state(int);
+//extern int get_suspend_state(void);
 static DEFINE_MUTEX(s2w_lock);
 static DEFINE_SEMAPHORE(s2w_sem);
 bool s2w_enabled = true;
@@ -780,7 +780,14 @@ static DECLARE_WORK(slide2wake_presspwr_work, slide2wake_presspwr);
 void slide2wake_pwrtrigger(void)
 {
 	if (mutex_trylock(&s2w_lock))
+	{
+		pr_alert("SLIDE2WAKE_PWRTRIGGER_YES");
 		schedule_work(&slide2wake_presspwr_work);
+	}
+	else
+	{
+		pr_alert("SLIDE2WAKE_PWRTRIGGER_NO");
+	}
 }
 
 static void mxt_input_touchevent(struct mxt_data *data,
@@ -864,6 +871,8 @@ static void mxt_input_touchevent(struct mxt_data *data,
 	if ((wake_start_x == 1 && x > x_hi) || (wake_start_y == 1 && y > y_hi))
 	{
 		//slide2wake_force_wakeup();
+		wake_start_x = 0;
+		wake_start_y = 0;
 		slide2wake_pwrtrigger();
 	}
 	
@@ -1759,7 +1768,7 @@ static int mxt_start(struct mxt_data *data)
 	else
 	{
 		if (s2w_enabled)
-			disable_irq_wake(data->client->irq);
+			disable_irq_wake(data->irq);
 		else
 			enable_irq(data->irq);
 	}
@@ -1776,7 +1785,7 @@ static void mxt_stop(struct mxt_data *data)
 		return;
 	}
 	if (s2w_enabled)
-		enable_irq_wake(data->client->irq);
+		enable_irq_wake(data->irq);
 	else
 		disable_irq(data->irq);
 	if (!s2w_enabled)
@@ -2182,7 +2191,8 @@ static int mxt_suspend(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct mxt_data *data = i2c_get_clientdata(client);
 	struct input_dev *input_dev = data->input_dev;
-
+	pr_alert("MXT_SUSPEND");
+	
 	mutex_lock(&input_dev->mutex);
 
 	if (input_dev->users)
@@ -2198,7 +2208,8 @@ static int mxt_resume(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct mxt_data *data = i2c_get_clientdata(client);
 	struct input_dev *input_dev = data->input_dev;
-
+	pr_alert("MXT_RESUME");
+	
 	mutex_lock(&input_dev->mutex);
 
 	if (input_dev->users)
