@@ -31,6 +31,7 @@
 #include <linux/syscore_ops.h>
 
 #include <trace/events/power.h>
+#include <mach/asv-exynos.h>
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -755,12 +756,12 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
-extern ssize_t hlpr_exynos5250_get_volt(char *buf, int isApp);
-extern void hlpr_exynos5250_set_volt(int cnt, int vdd_uv[]);
+extern ssize_t hlpr_exynos5250_get_volt(enum asv_type_id typeid, char *buf, int isApp);
+extern void hlpr_exynos5250_set_volt(enum asv_type_id typeid, int vdd_min, int vdd_max, int cnt, int vdd_uv[]);
 
 ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 {
-	return hlpr_exynos5250_get_volt(buf, FREQ_STEPS);
+	return hlpr_exynos5250_get_volt(ID_ARM, buf, FREQ_STEPS);
 }
 
 ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
@@ -773,7 +774,26 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 		return -EINVAL;
 	}
 
-	hlpr_exynos5250_set_volt(FREQ_STEPS, u);
+	hlpr_exynos5250_set_volt(ID_ARM, MIN_VDD_ARM, MAX_VDD_ARM, FREQ_STEPS, u);
+	return count;
+}
+
+ssize_t show_GPU_mV_table(struct cpufreq_policy *policy, char *buf)
+{
+	return hlpr_exynos5250_get_volt(ID_G3D, buf, FREQ_STEPS);
+}
+
+ssize_t store_GPU_mV_table(struct cpufreq_policy *policy,
+                                      const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	int u[FREQ_STEPS];
+	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20]);
+	if(ret != FREQ_STEPS) {
+		return -EINVAL;
+	}
+
+	hlpr_exynos5250_set_volt(ID_G3D, MIN_VDD_G3D, MAX_VDD_G3D, FREQ_STEPS, u);
 	return count;
 }
 
@@ -793,6 +813,7 @@ cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(UV_mV_table);
+cpufreq_freq_attr_rw(GPU_mV_table);
 cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
 
 static struct attribute *default_attrs[] = {
@@ -808,6 +829,7 @@ static struct attribute *default_attrs[] = {
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
 	&UV_mV_table.attr,
+	&GPU_mV_table.attr,
 	&screen_off_scaling_mhz.attr,
 	&bluetooth_scaling_mhz.attr,
 	NULL

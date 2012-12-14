@@ -19,7 +19,7 @@
 #define INT_ASV_GRP_NR			12
 #define MIF_DVFS_LEVEL_NR		8
 #define MIF_ASV_GRP_NR			4
-#define G3D_DVFS_LEVEL_NR		8
+#define G3D_DVFS_LEVEL_NR		FREQ_STEPS_GPU
 #define G3D_ASV_GRP_NR			12
 
 #define MAX_ASV_GRP_NR			12
