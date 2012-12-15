@@ -780,20 +780,20 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 
 ssize_t show_GPU_mV_table(struct cpufreq_policy *policy, char *buf)
 {
-	return hlpr_exynos5250_get_volt(ID_G3D, buf, FREQ_STEPS);
+	return hlpr_exynos5250_get_volt(ID_G3D, buf, FREQ_STEPS_GPU);
 }
 
 ssize_t store_GPU_mV_table(struct cpufreq_policy *policy,
                                       const char *buf, size_t count)
 {
 	unsigned int ret = -EINVAL;
-	int u[FREQ_STEPS];
-	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20]);
-	if(ret != FREQ_STEPS) {
+	int u[FREQ_STEPS_GPU];
+	ret = sscanf(buf, "%d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7]);
+	if(ret != FREQ_STEPS_GPU) {
 		return -EINVAL;
 	}
 
-	hlpr_exynos5250_set_volt(ID_G3D, MIN_VDD_G3D, MAX_VDD_G3D, FREQ_STEPS, u);
+	hlpr_exynos5250_set_volt(ID_G3D, MIN_VDD_G3D, MAX_VDD_G3D, FREQ_STEPS_GPU, u);
 	return count;
 }
 
