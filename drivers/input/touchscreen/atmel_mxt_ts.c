@@ -740,6 +740,7 @@ static bool isasleep = false;
 bool s2w_enabled = false;
 bool s2w_enabled_plug = false;
 bool disabled_irq = false;
+bool mxt_stopped = false;
 static unsigned int s2w_enabled_req = 0;
 static unsigned int wake_start_x = 0;
 static unsigned int wake_start_y = 0;
@@ -854,15 +855,18 @@ static void mxt_input_touchevent(struct mxt_data *data,
 	{
 		pr_alert("MXT_PRESS");
 		// slide2wake start
-		if (s2w_enabled && x < x_lo)
+		if (mxt_stopped)
 		{
-			wake_start_x = 1;
-			pr_alert("SLIDE2WAKE_START_X");
-		}
-		if (s2w_enabled && y < y_lo)
-		{
-			wake_start_y = 1;
-			pr_alert("SLIDE2WAKE_START_Y");
+			if (s2w_enabled && x < x_lo)
+			{
+				wake_start_x = 1;
+				pr_alert("SLIDE2WAKE_START_X");
+			}
+			if (s2w_enabled && y < y_lo)
+			{
+				wake_start_y = 1;
+				pr_alert("SLIDE2WAKE_START_Y");
+			}
 		}
 	}
 	else
@@ -872,12 +876,15 @@ static void mxt_input_touchevent(struct mxt_data *data,
 		wake_start_y = 0;
 	}
 	
-	if ((wake_start_x == 1 && x > x_hi) || (wake_start_y == 1 && y > y_hi))
+	if (mxt_stopped)
 	{
-		//slide2wake_force_wakeup();
-		wake_start_x = 0;
-		wake_start_y = 0;
-		slide2wake_pwrtrigger();
+		if ((wake_start_x == 1 && x > x_hi) || (wake_start_y == 1 && y > y_hi))
+		{
+			//slide2wake_force_wakeup();
+			wake_start_x = 0;
+			wake_start_y = 0;
+			slide2wake_pwrtrigger();
+		}
 	}
 	
 	mxt_input_report(data);
@@ -1814,6 +1821,7 @@ static int mxt_start(struct mxt_data *data)
 {
 	int error = 0;
 
+	mxt_stopped = false;
 	if (data->enabled) {
 		dev_err(&data->client->dev, "Touch is already started\n");
 		return error;
@@ -1852,7 +1860,8 @@ static int mxt_start(struct mxt_data *data)
 static void mxt_stop(struct mxt_data *data)
 {
 	int id, count = 0;
-
+	
+	mxt_stopped = true;
 	if (!data->enabled) {
 		dev_err(&data->client->dev, "Touch is already stopped\n");
 		return;
