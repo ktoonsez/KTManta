@@ -739,6 +739,7 @@ static DEFINE_SEMAPHORE(s2w_sem);
 static bool isasleep = false;
 bool s2w_enabled = false;
 bool s2w_enabled_plug = false;
+bool disabled_irq = false;
 static unsigned int s2w_enabled_req = 0;
 static unsigned int wake_start_x = 0;
 static unsigned int wake_start_y = 0;
@@ -1658,7 +1659,8 @@ static ssize_t mxt_update_fw_store(struct device *dev,
 		}
 	}
 	disable_irq(data->irq);
-
+	disabled_irq = true;
+	
 	dev_info(dev, "Updating firmware from sysfs\n");
 
 	error = request_firmware(&fw, firmware_name, dev);
@@ -1706,6 +1708,7 @@ err_verify_fw:
 	release_firmware(fw);
 err_request_firmware:
 	enable_irq(data->irq);
+	disabled_irq = false;
 	if (!enabled_status)
 		mxt_power_off(data);
 err_power_on:
@@ -1836,8 +1839,11 @@ static int mxt_start(struct mxt_data *data)
 		//	disable_irq_wake(data->irq);
 		//else
 		//	enable_irq(data->irq);
-		if (!s2w_enabled)
+		if (!s2w_enabled || disabled_irq)
+		{
 			enable_irq(data->irq);
+			disabled_irq = false;
+		}
 	}
 
 	return error;
@@ -1858,6 +1864,7 @@ static void mxt_stop(struct mxt_data *data)
 	if (!s2w_enabled)
 	{
 		disable_irq(data->irq);
+		disabled_irq = true;
 		mxt_power_off(data);
 	}
 	
@@ -2241,6 +2248,7 @@ static int __devexit mxt_remove(struct i2c_client *client)
 
 	sysfs_remove_group(&client->dev.kobj, &mxt_attr_group);
 	enable_irq(data->irq);
+	disabled_irq = false;
 	free_irq(data->irq, data);
 	input_unregister_device(data->input_dev);
 	i2c_unregister_device(data->client_boot);
