@@ -192,12 +192,12 @@ ssize_t hlpr_exynos5250_get_volt(enum asv_type_id typeid, char *buf, int isApp)
 		if (isApp == 0)
 		{
 			for (i = 0; i < dvfs_level_nr[typeid]; i++)
-				len += sprintf(buf + len, "%8u: %8d\n", volt_table[typeid][i][0], volt_table[typeid][i][1]);
+				len += sprintf(buf + len, "%8u: %8d\n", volt_table[typeid][i][0], volt_table[typeid][i][1+asv_group[typeid]]);
 		}
 		else
 		{
 			for (i = 0; i < dvfs_level_nr[typeid]; i++)
-				len += sprintf(buf + len, "%dmhz: %d mV\n", volt_table[typeid][i][0]/1000,volt_table[typeid][i][1]/1000);
+				len += sprintf(buf + len, "%dmhz: %d mV\n", volt_table[typeid][i][0]/1000,volt_table[typeid][i][1+asv_group[typeid]]/1000);
 		}
 	}
 	return len;
@@ -205,6 +205,7 @@ ssize_t hlpr_exynos5250_get_volt(enum asv_type_id typeid, char *buf, int isApp)
 
 extern void hlpr_set_volt_tablee(unsigned int i, unsigned int val);
 extern void hlpr_set_volt_tablee5(unsigned int i, unsigned int val);
+extern void hlpr_set_volt_tablee_G3D(unsigned int i, unsigned int val);
 
 void hlpr_exynos5250_set_volt(enum asv_type_id typeid, int vdd_min, int vdd_max, int cnt, int vdd_uv[])
 {
@@ -216,12 +217,14 @@ void hlpr_exynos5250_set_volt(enum asv_type_id typeid, int vdd_min, int vdd_max,
 		for (i = 0; i < cnt; i++) {
 		    if ((vdd_uv[i]*1000) >= vdd_min && (vdd_uv[i]*1000) <= vdd_max)
 		    {
-			volt_table[typeid][i][1] = vdd_uv[i]*1000;
+			volt_table[typeid][i][1+asv_group[typeid]] = vdd_uv[i]*1000;
 			if (typeid == ID_ARM)
 			{
 				hlpr_set_volt_tablee(i, vdd_uv[i]*1000);
 				hlpr_set_volt_tablee5(i, vdd_uv[i]*1000);
 			}
+			if (typeid == ID_G3D)
+				hlpr_set_volt_tablee_G3D(i, vdd_uv[i]*1000);
 		    }
 		}
 	}
@@ -231,12 +234,14 @@ void hlpr_exynos5250_set_volt(enum asv_type_id typeid, int vdd_min, int vdd_max,
 		for (i = 0; i < cnt; i++) {
 		    if ((vdd_uv[j]*1000) >= vdd_min && (vdd_uv[j]*1000) <= vdd_max)
 		    {
-			volt_table[typeid][i][1] = vdd_uv[j]*1000;
+			volt_table[typeid][i][1+asv_group[typeid]] = vdd_uv[j]*1000;
 			if (typeid == ID_ARM)
 			{
 				hlpr_set_volt_tablee(i, vdd_uv[j]*1000);
 				hlpr_set_volt_tablee5(i, vdd_uv[j]*1000);
 			}
+			if (typeid == ID_G3D)
+				hlpr_set_volt_tablee_G3D(i, vdd_uv[j]*1000);
 		    }
 		    j--;
 		}
