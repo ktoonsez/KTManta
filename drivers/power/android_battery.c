@@ -36,6 +36,7 @@
 #include <linux/mutex.h>
 #include <linux/debugfs.h>
 #include <linux/platform_data/android_battery.h>
+#include <linux/i2c/atmel_mxt_ts.h>
 
 #define FAST_POLL               (1 * 60)
 #define SLOW_POLL               (10 * 60)
@@ -374,6 +375,18 @@ static void android_bat_charge_source_changed(struct android_bat_callbacks *ptr,
 
 	pr_info("battery: charge source type was changed: %s\n",
 		charge_source_str(battery->charge_source));
+
+	switch (battery->charge_source) {
+	case CHARGE_SOURCE_NONE:
+		slide2wake_change(10);
+		break;
+	case CHARGE_SOURCE_USB:
+		slide2wake_change(11);
+		break;
+	case CHARGE_SOURCE_AC:
+		slide2wake_change(11);
+		break;
+	}
 
 	mutex_unlock(&android_bat_state_lock);
 	queue_work(battery->monitor_wqueue, &battery->charger_work);

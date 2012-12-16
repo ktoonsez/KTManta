@@ -736,7 +736,10 @@ static struct input_dev *slide2wake_dev;
 //extern int get_suspend_state(void);
 static DEFINE_MUTEX(s2w_lock);
 static DEFINE_SEMAPHORE(s2w_sem);
-bool s2w_enabled = true;
+static bool isasleep = false;
+bool s2w_enabled = false;
+bool s2w_enabled_plug = false;
+static unsigned int s2w_enabled_req = 0;
 static unsigned int wake_start_x = 0;
 static unsigned int wake_start_y = 0;
 static unsigned int x_lo;
@@ -1737,15 +1740,66 @@ static ssize_t slide2wake_store(struct device *dev,
 	return size;
 }
 
+static ssize_t slide2wake_plug_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", s2w_enabled_plug);
+}
+
+static ssize_t slide2wake_plug_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%d\n", &value);
+	if (ret != 1)
+		return -EINVAL;
+	else
+	{
+		s2w_enabled_plug = value ? true : false;
+		if (s2w_enabled_req == 20 || s2w_enabled_req == 21)
+		{
+			if (s2w_enabled_plug)
+			{
+				if (isasleep)
+					s2w_enabled_req = s2w_enabled_req - 10;
+				else
+					s2w_enabled = (s2w_enabled_req - 20) ? true : false;
+			}
+			else
+				s2w_enabled_req = 0;
+		}
+	}
+
+	return size;
+}
+
+void slide2wake_change(unsigned int val)
+{
+	if (s2w_enabled_plug)
+	{
+		if (isasleep)
+			s2w_enabled_req = val;
+		else
+			s2w_enabled = (val - 10) ? true : false;
+	}
+	else
+	{
+		s2w_enabled_req = val + 10;
+	}
+}
+
 static DEVICE_ATTR(object, 0444, mxt_object_show, NULL);
 static DEVICE_ATTR(update_fw, 0664, NULL, mxt_update_fw_store);
 static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
 	slide2wake_show, slide2wake_store);
+static DEVICE_ATTR(slide2wake_plug, S_IRUGO | S_IWUSR | S_IWGRP,
+	slide2wake_plug_show, slide2wake_plug_store);
 
 static struct attribute *mxt_attrs[] = {
 	&dev_attr_object.attr,
 	&dev_attr_update_fw.attr,
 	&dev_attr_slide2wake.attr,
+	&dev_attr_slide2wake_plug.attr,
 	NULL
 };
 
@@ -1762,14 +1816,27 @@ static int mxt_start(struct mxt_data *data)
 		return error;
 	}
 
+	if (s2w_enabled_req == 11)
+	{
+		s2w_enabled = true;
+		s2w_enabled_req = 0;
+	}	
+	if (s2w_enabled_req == 10)
+	{
+		s2w_enabled = false;
+		s2w_enabled_req = 0;
+	}	
+
 	error = mxt_power_on(data);
 	if (error)
 		dev_err(&data->client->dev, "Fail to start touch\n");
 	else
 	{
-		if (s2w_enabled)
-			disable_irq_wake(data->irq);
-		else
+		//if (s2w_enabled)
+		//	disable_irq_wake(data->irq);
+		//else
+		//	enable_irq(data->irq);
+		if (!s2w_enabled)
 			enable_irq(data->irq);
 	}
 
@@ -1784,13 +1851,16 @@ static void mxt_stop(struct mxt_data *data)
 		dev_err(&data->client->dev, "Touch is already stopped\n");
 		return;
 	}
-	if (s2w_enabled)
-		enable_irq_wake(data->irq);
-	else
-		disable_irq(data->irq);
+	//if (s2w_enabled)
+	//	enable_irq_wake(data->irq);
+	//else
+	//	disable_irq(data->irq);
 	if (!s2w_enabled)
+	{
+		disable_irq(data->irq);
 		mxt_power_off(data);
-
+	}
+	
 	/* release the finger which is remained */
 	for (id = 0; id < MXT_MAX_FINGER; id++) {
 		if (!data->finger[id].status)
