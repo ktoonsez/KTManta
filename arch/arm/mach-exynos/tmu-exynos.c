@@ -26,6 +26,7 @@
 #include <linux/debugfs.h>
 
 #include <plat/cpu.h>
+#include <linux/cpufreq.h>
 
 #include <mach/regs-tmu.h>
 #include <mach/cpufreq.h>
@@ -33,6 +34,11 @@
 #include <mach/map.h>
 #include <mach/regs-mem.h>
 #include <mach/smc.h>
+struct tmu_info *ginfo;
+static int lcpu_start_throttle;
+static int lcpu_stop_throttle;
+static int lmem_start_throttle;
+static int lmem_stop_throttle;
 
 static DEFINE_MUTEX(tmu_lock);
 
@@ -97,10 +103,17 @@ static void tmu_monitor(struct work_struct *work)
 	int cur_temp;
 
 	cur_temp = get_cur_temp(info);
-	//pr_alert("GET_CUR_TEMP: c=%d st=%d\n", cur_temp, data->ts.stop_throttle);
-	//pr_info("GET_CUR_TEMP: c=%d st=%d\n", cur_temp, data->ts.stop_throttle); data->ts.stop_throttle = 78
+	pr_alert("GET_CUR_TEMP: c=%d start=%d stop=%d\n", cur_temp, lcpu_start_throttle, lcpu_stop_throttle);
 
 	dev_dbg(info->dev, "Current: %dc, FLAG=%d\n", cur_temp, info->tmu_state);
+	if (lcpu_start_throttle == 0)
+		lcpu_start_throttle = 80;
+	if (lcpu_stop_throttle == 0)
+		lcpu_stop_throttle = 78;
+	if (lmem_start_throttle == 0)
+		lmem_start_throttle = 85;
+	if (lmem_stop_throttle == 0)
+		lmem_stop_throttle = 80;
 
 	mutex_lock(&tmu_lock);
 	switch (info->tmu_state) {
@@ -111,7 +124,7 @@ static void tmu_monitor(struct work_struct *work)
 	case TMU_STATUS_THROTTLED:
 		if (cur_temp >= data->ts.start_tripping)
 			info->tmu_state = TMU_STATUS_TRIPPED;
-		else if (cur_temp > data->ts.stop_throttle)
+		else if (cur_temp > lcpu_stop_throttle)
 			exynos_thermal_throttle();
 		else
 			info->tmu_state = TMU_STATUS_NORMAL;
@@ -130,13 +143,13 @@ static void tmu_monitor(struct work_struct *work)
 	}
 
 	/* Memory throttling */
-	if (cur_temp >= data->ts.start_mem_throttle &&
+	if (cur_temp >= lmem_start_throttle &&
 		!info->mem_throttled) {
 		set_refresh_period(FREQ_IN_PLL, info->auto_refresh_mem_throttle);
 		info->mem_throttled = true;
 		dev_dbg(info->dev, "set auto refresh period %dns\n",
 				info->auto_refresh_mem_throttle);
-	} else if (cur_temp <= data->ts.stop_mem_throttle &&
+	} else if (cur_temp <= lmem_stop_throttle &&
 		info->mem_throttled) {
 		set_refresh_period(FREQ_IN_PLL, info->auto_refresh_normal);
 		info->mem_throttled = false;
@@ -201,7 +214,10 @@ static int exynos_tmu_init(struct tmu_info *info)
 			info->auto_refresh_normal, info->auto_refresh_mem_throttle);
 
 	/*Get rising Threshold and Set interrupt level*/
-	temp_throttle = data->ts.start_throttle
+	if (lcpu_start_throttle == 0)
+		lcpu_start_throttle = 80;
+
+	temp_throttle = lcpu_start_throttle
 			+ info->te1 - TMU_DC_VALUE;
 	temp_trip = data->ts.start_tripping
 			+ info->te1 - TMU_DC_VALUE;
@@ -317,12 +333,126 @@ const static struct file_operations tmu_dev_status_fops = {
 	.release	= single_release,
 };
 
+
+//*********** CPUT INFO ************
+static ssize_t show_cpu_start_throttle(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", lcpu_start_throttle);
+}
+
+static ssize_t store_cpu_start_throttle(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret < 0)
+		return ret;
+	if (value > 90)
+		value = 90;
+	lcpu_start_throttle = value;
+	ret = exynos_tmu_init(ginfo);
+	return count;
+}
+static ssize_t show_cpu_stop_throttle(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", lcpu_stop_throttle);
+}
+
+static ssize_t store_cpu_stop_throttle(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret < 0)
+		return ret;
+	if (value > 90)
+		value = 90;
+	lcpu_stop_throttle = value;
+	return count;
+}
+static ssize_t show_mem_start_throttle(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", lmem_start_throttle);
+}
+
+static ssize_t store_mem_start_throttle(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret < 0)
+		return ret;
+	if (value > 90)
+		value = 90;
+	lmem_start_throttle = value;
+	return count;
+}
+static ssize_t show_mem_stop_throttle(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", lmem_stop_throttle);
+}
+
+static ssize_t store_mem_stop_throttle(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret < 0)
+		return ret;
+	if (value > 90)
+		value = 90;
+	lmem_stop_throttle = value;
+	return count;
+}
+
+static ssize_t show_cur_temp(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	int ct;
+	ct = get_cur_temp(ginfo);
+
+	return sprintf(buf, "%u\n", ct);
+}
+
+define_one_global_rw(cpu_start_throttle);
+define_one_global_rw(cpu_stop_throttle);
+define_one_global_rw(mem_start_throttle);
+define_one_global_rw(mem_stop_throttle);
+define_one_global_ro(cur_temp);
+
+static struct attribute *cput_attributes[] = {
+	&cpu_start_throttle.attr,
+	&cpu_stop_throttle.attr,
+	&mem_start_throttle.attr,
+	&mem_stop_throttle.attr,
+	&cur_temp.attr,
+	NULL,
+};
+
+static struct attribute_group cput_attributes_group = {
+	.attrs = cput_attributes,
+	.name = "cput_attributes",
+};
+
 static int __devinit tmu_probe(struct platform_device *pdev)
 {
 	struct tmu_info *info;
 	struct resource *res;
 	int ret;
-
+	int rc;
+	
 	if (dev_get_platdata(&pdev->dev) == NULL) {
 		dev_err(&pdev->dev, "No platform data\n");
 		ret = -ENODEV;
@@ -370,6 +500,11 @@ static int __devinit tmu_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, info);
 
+	lcpu_start_throttle = 80;
+	lcpu_stop_throttle = 78;
+	lmem_start_throttle = 85;
+	lmem_stop_throttle = 80;
+
 	ret = exynos_tmu_init(info);
 	if (ret < 0)
 		goto err_noinit;
@@ -392,6 +527,11 @@ static int __devinit tmu_probe(struct platform_device *pdev)
 	}
 
 	dev_info(&pdev->dev, "Tmu Initialization is sucessful...!\n");
+	
+	ginfo = info;
+	rc = sysfs_create_group(cpufreq_global_kobject,
+		&cput_attributes_group);
+
 	return 0;
 
 err_nodbgfs:
@@ -416,6 +556,9 @@ static int __devexit tmu_remove(struct platform_device *pdev)
 	destroy_workqueue(tmu_monitor_wq);
 
 	platform_set_drvdata(pdev, NULL);
+
+	sysfs_remove_group(cpufreq_global_kobject,
+			&cput_attributes_group);
 
 	return 0;
 }
