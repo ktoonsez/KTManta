@@ -2280,7 +2280,7 @@ static int mxt_suspend(struct device *dev)
 	struct input_dev *input_dev = data->input_dev;
 	pr_alert("MXT_SUSPEND");
 
-	if (s2w_enabled)
+	if (s2w_enabled && !s2w_enabled_plug)
 		return 1;
 	
 	mutex_lock(&input_dev->mutex);
