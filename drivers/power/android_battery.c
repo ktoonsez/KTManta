@@ -312,6 +312,16 @@ static int android_bat_enable_charging(struct android_bat_data *battery,
 	android_bat_set_charge_time(battery, enable);
 	pr_info("battery: enable=%d charger: %s\n", enable,
 		charge_source_str(battery->charge_source));
+
+	switch (battery->charge_source) {
+	case CHARGE_SOURCE_USB:
+		slide2wake_change(11);
+		break;
+	case CHARGE_SOURCE_AC:
+		slide2wake_change(11);
+		break;
+	}
+		
 	return 0;
 }
 

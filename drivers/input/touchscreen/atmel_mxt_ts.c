@@ -853,7 +853,7 @@ static void mxt_input_touchevent(struct mxt_data *data,
 
 	if ((status & MXT_PRESS) || (status & MXT_MOVE))
 	{
-		pr_alert("MXT_PRESS");
+		//pr_alert("MXT_PRESS");
 		// slide2wake start
 		if (mxt_stopped)
 		{
@@ -871,7 +871,7 @@ static void mxt_input_touchevent(struct mxt_data *data,
 	}
 	else
 	{
-		pr_alert("MXT_RELEASE");
+		//pr_alert("MXT_RELEASE");
 		wake_start_x = 0;
 		wake_start_y = 0;
 	}
@@ -1822,11 +1822,6 @@ static int mxt_start(struct mxt_data *data)
 	int error = 0;
 
 	mxt_stopped = false;
-	if (data->enabled) {
-		dev_err(&data->client->dev, "Touch is already started\n");
-		return error;
-	}
-
 	if (s2w_enabled_req == 11)
 	{
 		s2w_enabled = true;
@@ -1837,6 +1832,11 @@ static int mxt_start(struct mxt_data *data)
 		s2w_enabled = false;
 		s2w_enabled_req = 0;
 	}	
+
+	if (data->enabled) {
+		dev_err(&data->client->dev, "Touch is already started\n");
+		return error;
+	}
 
 	error = mxt_power_on(data);
 	if (error)
@@ -2279,6 +2279,9 @@ static int mxt_suspend(struct device *dev)
 	struct mxt_data *data = i2c_get_clientdata(client);
 	struct input_dev *input_dev = data->input_dev;
 	pr_alert("MXT_SUSPEND");
+
+	if (s2w_enabled)
+		return 1;
 	
 	mutex_lock(&input_dev->mutex);
 
