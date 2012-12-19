@@ -49,6 +49,7 @@
 #define PWM_MAX_VIBRATE_DUTY	(PWM_HAPTIC_PERIOD * 99/100)
 /* duty cycle for no vibration effect */
 #define PWM_NO_VIBRATE_DUTY	(PWM_HAPTIC_PERIOD * 50/100)
+int vibe_strength = 49;
 
 struct isa1200_data {
 	struct i2c_client *client;
@@ -95,7 +96,8 @@ static int isa1200_vibrate_on(struct isa1200_data *haptic)
 			pr_err("write HCTRL1 failed %d\n", ret);
 			goto err_return;
 		}
-		ret = pwm_config(haptic->pwm, PWM_MAX_VIBRATE_DUTY,
+		int vstrength = (PWM_HAPTIC_PERIOD * (vibe_strength+50)/100);
+		ret = pwm_config(haptic->pwm, vstrength,
 				PWM_HAPTIC_PERIOD);
 		if (ret) {
 			pr_err("pwm_config for max duty failed %d\n", ret);
@@ -177,6 +179,26 @@ static enum hrtimer_restart isa1200_timer_func(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
+static ssize_t show_vibe_strength(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", vibe_strength);
+}
+
+static ssize_t store_vibe_strength(struct device *dev, struct device_attribute *attr,const char *buf, size_t size)
+{
+	int value;
+	sscanf(buf, "%d", &value);
+	if(value < 0)
+		value = 0;
+	else if(value > 49)
+		value = 49;
+
+	vibe_strength = value;
+
+	return vibe_strength;
+}
+static DEVICE_ATTR(vibe_strength, 0777, show_vibe_strength, store_vibe_strength);
+
 static int __devinit isa1200_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
@@ -236,6 +258,11 @@ static int __devinit isa1200_probe(struct i2c_client *client,
 		goto setup_fail;
 	}
 	pr_debug("%s registered\n", id->name);
+	
+	ret = device_create_file(&client->dev, &dev_attr_vibe_strength);
+	if(ret)
+		printk(KERN_ERR "[VIBETONZ] vibe_strength device file create failed\n");
+		
 	return 0;
 
 setup_fail:
