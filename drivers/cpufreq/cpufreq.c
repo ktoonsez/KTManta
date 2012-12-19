@@ -757,11 +757,17 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 }
 
 extern ssize_t hlpr_exynos5250_get_volt(enum asv_type_id typeid, char *buf, int isApp);
+extern ssize_t hlpr_exynos5250_get_volt_stock(enum asv_type_id typeid, char *buf, int isApp);
 extern void hlpr_exynos5250_set_volt(enum asv_type_id typeid, int vdd_min, int vdd_max, int cnt, int vdd_uv[]);
 
 ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 {
 	return hlpr_exynos5250_get_volt(ID_ARM, buf, FREQ_STEPS);
+}
+
+ssize_t show_UV_mV_table_stock(struct cpufreq_policy *policy, char *buf)
+{
+	return hlpr_exynos5250_get_volt_stock(ID_ARM, buf, FREQ_STEPS);
 }
 
 ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
@@ -781,6 +787,11 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 ssize_t show_GPU_mV_table(struct cpufreq_policy *policy, char *buf)
 {
 	return hlpr_exynos5250_get_volt(ID_G3D, buf, FREQ_STEPS_GPU);
+}
+
+ssize_t show_GPU_mV_table_stock(struct cpufreq_policy *policy, char *buf)
+{
+	return hlpr_exynos5250_get_volt_stock(ID_G3D, buf, FREQ_STEPS_GPU);
 }
 
 ssize_t store_GPU_mV_table(struct cpufreq_policy *policy,
@@ -813,7 +824,9 @@ cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(UV_mV_table);
+cpufreq_freq_attr_ro(UV_mV_table_stock);
 cpufreq_freq_attr_rw(GPU_mV_table);
+cpufreq_freq_attr_ro(GPU_mV_table_stock);
 cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
 
 static struct attribute *default_attrs[] = {
@@ -829,7 +842,9 @@ static struct attribute *default_attrs[] = {
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
 	&UV_mV_table.attr,
+	&UV_mV_table_stock.attr,
 	&GPU_mV_table.attr,
+	&GPU_mV_table_stock.attr,
 	&screen_off_scaling_mhz.attr,
 	&bluetooth_scaling_mhz.attr,
 	NULL
