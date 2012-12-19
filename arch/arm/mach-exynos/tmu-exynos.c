@@ -351,8 +351,12 @@ static ssize_t store_cpu_start_throttle(struct kobject *kobj,
 	ret = sscanf(buf, "%u", &value);
 	if (ret < 0)
 		return ret;
+	if (value <= lcpu_stop_throttle)
+		value = lcpu_stop_throttle + 1;
 	if (value > 90)
 		value = 90;
+	if (value < 50)
+		value = 50;
 	lcpu_start_throttle = value;
 	ret = exynos_tmu_init(ginfo);
 	return count;
@@ -370,10 +374,12 @@ static ssize_t store_cpu_stop_throttle(struct kobject *kobj,
 	unsigned int value;
 
 	ret = sscanf(buf, "%u", &value);
-	if (ret < 0)
-		return ret;
+	if (value >= lcpu_start_throttle)
+		value = lcpu_start_throttle - 1;
 	if (value > 90)
 		value = 90;
+	if (value < 50)
+		value = 50;
 	lcpu_stop_throttle = value;
 	return count;
 }
@@ -390,10 +396,12 @@ static ssize_t store_mem_start_throttle(struct kobject *kobj,
 	unsigned int value;
 
 	ret = sscanf(buf, "%u", &value);
-	if (ret < 0)
-		return ret;
+	if (value <= lmem_stop_throttle)
+		value = lmem_stop_throttle + 1;
 	if (value > 90)
 		value = 90;
+	if (value < 50)
+		value = 50;
 	lmem_start_throttle = value;
 	return count;
 }
@@ -410,10 +418,12 @@ static ssize_t store_mem_stop_throttle(struct kobject *kobj,
 	unsigned int value;
 
 	ret = sscanf(buf, "%u", &value);
-	if (ret < 0)
-		return ret;
+	if (value >= lmem_start_throttle)
+		value = lmem_start_throttle - 1;
 	if (value > 90)
 		value = 90;
+	if (value < 50)
+		value = 50;
 	lmem_stop_throttle = value;
 	return count;
 }
