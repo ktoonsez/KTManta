@@ -583,7 +583,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 extern void ktoonservative_is_active(bool val);
 
-void boostpulse_relay()
+void boostpulse_relay_kt()
 {
 	if (Lboostpulse_value > 0)
 	{

@@ -35,6 +35,7 @@
 #include <trace/events/cpufreq_interactive.h>
 
 static bool ktoonservative_is_activef = false;
+static bool pegasusq_is_activef = false;
 static bool interactive_is_activef = false;
 
 static atomic_t active_count = ATOMIC_INIT(0);
@@ -606,9 +607,15 @@ static ssize_t store_boost(struct kobject *kobj, struct attribute *attr,
 
 define_one_global_rw(boost);
 
-extern void boostpulse_relay();
+extern void boostpulse_relay_kt();
+extern void boostpulse_relay_pq();
 
 void ktoonservative_is_active(bool val)
+{
+	ktoonservative_is_activef = val;
+}
+
+void pegasusq_is_active(bool val)
 {
 	ktoonservative_is_activef = val;
 }
@@ -624,7 +631,9 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 		return ret;
 
 	if (ktoonservative_is_activef)
-		boostpulse_relay();
+		boostpulse_relay_kt();
+	if (ktoonservative_is_activef)
+		boostpulse_relay_pq();
 	
 	if (interactive_is_activef)
 	{

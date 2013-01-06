@@ -42,6 +42,10 @@
 
 #define RQ_AVG_TIMER_RATE	10
 
+static bool boostpulse_relayf = false;
+static unsigned int boostpulse_relay_sr = 0;
+static unsigned int Lboostpulse_value = 1000000;
+
 struct runqueue_data {
 	unsigned int nr_run_avg;
 	unsigned int update_rate;
@@ -469,6 +473,12 @@ static ssize_t show_sampling_rate_min(struct kobject *kobj,
 	return sprintf(buf, "%u\n", min_sampling_rate);
 }
 
+static ssize_t show_boostpulse_value(struct kobject *kobj,
+				      struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", Lboostpulse_value / 1000);
+}
+
 define_one_global_ro(sampling_rate_min);
 
 /* cpufreq_pegasusq Governor Tunables */
@@ -841,6 +851,23 @@ static ssize_t store_freq_for_responsiveness(struct kobject *a, struct attribute
 	return count;
 }
 
+static ssize_t store_boostpulse_value(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+
+	if (input * 1000 > 2100000)
+		input = 2100000;
+
+	Lboostpulse_value = input * 1000;
+	return count;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(io_is_busy);
 define_one_global_rw(up_threshold);
@@ -859,6 +886,7 @@ define_one_global_rw(hotplug_lock);
 define_one_global_rw(dvfs_debug);
 define_one_global_rw(up_threshold_at_min_freq);
 define_one_global_rw(freq_for_responsiveness);
+define_one_global_rw(boostpulse_value);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -894,6 +922,7 @@ static struct attribute *dbs_attributes[] = {
 	&hotplug_rq_4_0.attr,
 	&up_threshold_at_min_freq.attr,
 	&freq_for_responsiveness.attr,
+	&boostpulse_value.attr,
 	NULL
 };
 
@@ -1125,6 +1154,17 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	int rq_avg = 0;
 	policy = this_dbs_info->cur_policy;
 
+	if (boostpulse_relayf)
+	{
+		if (boostpulse_relay_sr != 0)
+			dbs_tuners_ins.sampling_rate = boostpulse_relay_sr;
+		boostpulse_relayf = false;
+
+		__cpufreq_driver_target(policy, Lboostpulse_value,
+			CPUFREQ_RELATION_H);
+		return;
+	}
+
 	hotplug_history->usage[num_hist].freq = policy->cur;
 	hotplug_history->usage[num_hist].rq_avg = get_nr_run_avg();
 
@@ -1297,6 +1337,20 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 }
 
+extern void pegasusq_is_active(bool val);
+
+void boostpulse_relay_pq()
+{
+	if (Lboostpulse_value > 0)
+	{
+		//pr_info("BOOST_PULSE_FROM_INTERACTIVE");
+		if (dbs_tuners_ins.sampling_rate != min_sampling_rate)
+			boostpulse_relay_sr = dbs_tuners_ins.sampling_rate;
+		boostpulse_relayf = true;
+		dbs_tuners_ins.sampling_rate = min_sampling_rate;
+	}
+}
+
 static void do_dbs_timer(struct work_struct *work)
 {
 	struct cpu_dbs_info_s *dbs_info =
@@ -1429,6 +1483,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
+		pegasusq_is_active(true);
 		if ((!cpu_online(cpu)) || (!policy->cur))
 			return -EINVAL;
 
@@ -1486,6 +1541,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		break;
 
 	case CPUFREQ_GOV_STOP:
+		pegasusq_is_active(false);
 #ifdef CONFIG_HAS_EARLYSUSPEND
 		unregister_early_suspend(&early_suspend);
 #endif
