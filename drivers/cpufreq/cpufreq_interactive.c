@@ -617,7 +617,7 @@ void ktoonservative_is_active(bool val)
 
 void pegasusq_is_active(bool val)
 {
-	ktoonservative_is_activef = val;
+	pegasusq_is_activef = val;
 }
 
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
@@ -632,7 +632,7 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 
 	if (ktoonservative_is_activef)
 		boostpulse_relay_kt();
-	if (ktoonservative_is_activef)
+	if (pegasusq_is_activef)
 		boostpulse_relay_pq();
 	
 	if (interactive_is_activef)
