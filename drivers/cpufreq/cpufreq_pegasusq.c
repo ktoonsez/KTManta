@@ -1207,7 +1207,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	/* calculate the average load across all related CPUs */
 	avg_load = total_load / num_online_cpus();
 	hotplug_history->usage[num_hist].avg_load = avg_load;
-
+	//pr_info("LOAD_TIMER - %d - %d - %d - %d", max_load_freq/1000, total_load, avg_load, num_online_cpus());
 
 	/* Check for CPU hotplug */
 	if (check_up()) {
