@@ -1159,6 +1159,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		if (boostpulse_relay_sr != 0)
 			dbs_tuners_ins.sampling_rate = boostpulse_relay_sr;
 		boostpulse_relayf = false;
+		if (policy->cur > Lboostpulse_value)
+			return;
 
 		__cpufreq_driver_target(policy, Lboostpulse_value,
 			CPUFREQ_RELATION_H);
