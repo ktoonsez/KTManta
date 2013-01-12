@@ -80,6 +80,9 @@ static unsigned int Lbluetooth_scaling_mhz_orig = 0;
 static bool bluetooth_scaling_mhz_active = false;
 static bool bluetooth_overwrote_screen_off = false;
 
+static unsigned int gpu_min = 100;
+static unsigned int gpu_max = 533;
+
 #define lock_policy_rwsem(mode, cpu)					\
 int lock_policy_rwsem_##mode					\
 (int cpu)								\
@@ -472,6 +475,57 @@ static ssize_t store_scaling_max_freq(struct cpufreq_policy *policy, const char 
 	
 	return count;
 }
+
+extern void hlpr_set_min_max_G3D(unsigned int min, unsigned int max);
+
+static ssize_t show_scaling_min_freq_gpu(struct cpufreq_policy *policy,	char *buf)
+{
+	return sprintf(buf, "%u\n", gpu_min);
+}
+
+static ssize_t store_scaling_min_freq_gpu(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (value < gpu_max)
+	{
+		gpu_min = value;
+		hlpr_set_min_max_G3D(gpu_min, gpu_max);
+	}
+	else
+		return -EINVAL;
+	return count;
+}
+
+static ssize_t show_scaling_max_freq_gpu(struct cpufreq_policy *policy,	char *buf)
+{
+	return sprintf(buf, "%u\n", gpu_max);
+}
+
+static ssize_t store_scaling_max_freq_gpu(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (value > gpu_min)
+	{
+		gpu_max = value;
+		hlpr_set_min_max_G3D(gpu_min, gpu_max);
+	}
+	else
+		return -EINVAL;
+	return count;
+}
+
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
  */
@@ -820,6 +874,8 @@ cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
 cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
+cpufreq_freq_attr_rw(scaling_min_freq_gpu);
+cpufreq_freq_attr_rw(scaling_max_freq_gpu);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
@@ -835,6 +891,8 @@ static struct attribute *default_attrs[] = {
 	&cpuinfo_transition_latency.attr,
 	&scaling_min_freq.attr,
 	&scaling_max_freq.attr,
+	&scaling_min_freq_gpu.attr,
+	&scaling_max_freq_gpu.attr,
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
