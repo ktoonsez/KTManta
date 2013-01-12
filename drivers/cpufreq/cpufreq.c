@@ -492,7 +492,7 @@ static ssize_t store_scaling_min_freq_gpu(struct cpufreq_policy *policy, const c
 	if (ret != 1)
 		return -EINVAL;
 	
-	if (value < gpu_max)
+	if (value <= gpu_max)
 	{
 		gpu_min = value;
 		hlpr_set_min_max_G3D(gpu_min, gpu_max);
@@ -516,7 +516,7 @@ static ssize_t store_scaling_max_freq_gpu(struct cpufreq_policy *policy, const c
 	if (ret != 1)
 		return -EINVAL;
 
-	if (value > gpu_min)
+	if (value >= gpu_min)
 	{
 		gpu_max = value;
 		hlpr_set_min_max_G3D(gpu_min, gpu_max);
