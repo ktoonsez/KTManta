@@ -107,6 +107,7 @@ static mali_dvfs_info mali_dvfs_infotbl_static[] = {
 unsigned int dvfs_step_min = 0;
 unsigned int dvfs_step_max = 7;
 unsigned int dvfs_step_max_minus1 = 450;
+unsigned int cur_gpu_freq = 0;
 
 #ifdef CONFIG_MALI_T6XX_DVFS
 typedef struct _mali_dvfs_status_type{
@@ -742,6 +743,11 @@ int kbase_platform_dvfs_get_level(int freq)
 	return -1;
 }
 
+unsigned int get_cur_gpu_freq()
+{
+	return cur_gpu_freq;
+}
+
 void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
 {
 	static int prev_level = -1;
@@ -749,12 +755,14 @@ void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
 
 	if (level == prev_level)
 		return;
-
+	
 	if (level >= dvfs_step_max)
 		level = dvfs_step_max-1;
 	if (level < dvfs_step_min)
 		level = dvfs_step_min;
 
+	cur_gpu_freq = mali_dvfs_infotbl[level].clock;
+	
 	if (WARN_ON((level >= MALI_DVFS_STEP)||(level < 0)))
 		panic("invalid level");
 
