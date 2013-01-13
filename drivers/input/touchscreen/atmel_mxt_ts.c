@@ -1817,10 +1817,14 @@ static const struct attribute_group mxt_attr_group = {
 	.attrs = mxt_attrs,
 };
 
+extern set_screen_on_off_mhz(unsigned long onoff);
+
 static int mxt_start(struct mxt_data *data)
 {
 	int error = 0;
-
+	
+	set_screen_on_off_mhz(1);
+	
 	mxt_stopped = false;
 	if (s2w_enabled_req == 11)
 	{
@@ -1861,6 +1865,8 @@ static void mxt_stop(struct mxt_data *data)
 {
 	int id, count = 0;
 	
+	set_screen_on_off_mhz(0);
+
 	mxt_stopped = true;
 	if (!data->enabled) {
 		dev_err(&data->client->dev, "Touch is already stopped\n");
@@ -2273,6 +2279,7 @@ static int __devexit mxt_remove(struct i2c_client *client)
 }
 
 #ifdef CONFIG_PM
+
 static int mxt_suspend(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
@@ -2299,7 +2306,7 @@ static int mxt_resume(struct device *dev)
 	struct mxt_data *data = i2c_get_clientdata(client);
 	struct input_dev *input_dev = data->input_dev;
 	pr_alert("MXT_RESUME");
-	
+
 	mutex_lock(&input_dev->mutex);
 
 	if (input_dev->users)

@@ -604,8 +604,6 @@ void dhd_enable_packet_filter(int value, dhd_pub_t *dhd)
 #endif /* PKT_FILTER_SUPPORT */
 }
 
-extern set_screen_on_off_mhz(unsigned long onoff);
-
 static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 {
 #ifndef SUPPORT_PM2_ONLY
@@ -635,7 +633,6 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 #endif
 				/* Kernel suspended */
 				DHD_ERROR(("%s: force extra Suspend setting\n", __FUNCTION__));
-				set_screen_on_off_mhz(0);
 
 #ifndef SUPPORT_PM2_ONLY
 				dhd_wl_ioctl_cmd(dhd, WLC_SET_PM, (char *)&power_mode,
@@ -678,7 +675,6 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 #endif
 				/* Kernel resumed  */
 				DHD_ERROR(("%s: Remove extra suspend setting\n", __FUNCTION__));
-				set_screen_on_off_mhz(1);
 
 #ifndef SUPPORT_PM2_ONLY
 				power_mode = PM_FAST;
