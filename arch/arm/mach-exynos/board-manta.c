@@ -735,7 +735,7 @@ static void __init manta_machine_init(void)
 	platform_device_register(&manta_event_device);
 
 	manta_sysmmu_init();
-	exynos_ion_set_platdata();
+	//exynos_ion_set_platdata();
 	manta_dwmci_init();
 
 	if (manta_charger_mode)
