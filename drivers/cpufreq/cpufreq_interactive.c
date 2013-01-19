@@ -36,6 +36,7 @@
 
 static bool ktoonservative_is_activef = false;
 static bool pegasusq_is_activef = false;
+static bool ondemand_is_activef = false;
 static bool interactive_is_activef = false;
 
 static atomic_t active_count = ATOMIC_INIT(0);
@@ -609,6 +610,7 @@ define_one_global_rw(boost);
 
 extern void boostpulse_relay_kt();
 extern void boostpulse_relay_pq();
+extern void boostpulse_relay_od();
 
 void ktoonservative_is_active(bool val)
 {
@@ -618,6 +620,11 @@ void ktoonservative_is_active(bool val)
 void pegasusq_is_active(bool val)
 {
 	pegasusq_is_activef = val;
+}
+
+void ondemand_is_active(bool val)
+{
+	ondemand_is_activef = val;
 }
 
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
@@ -634,6 +641,8 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 		boostpulse_relay_kt();
 	if (pegasusq_is_activef)
 		boostpulse_relay_pq();
+	if (ondemand_is_activef)
+		boostpulse_relay_od();
 	
 	if (interactive_is_activef)
 	{
