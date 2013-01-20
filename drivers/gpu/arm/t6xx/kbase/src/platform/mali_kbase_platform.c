@@ -704,13 +704,13 @@ static ssize_t set_dvfs(struct device *dev, struct device_attribute *attr, const
 		return -ENODEV;
 
 #ifdef CONFIG_MALI_T6XX_DVFS
-	if (sysfs_streq("off", buf)) {
+	/*if (sysfs_streq("off", buf)) {
 		kbase_platform_dvfs_enable(false, MALI_DVFS_BL_CONFIG_FREQ);
 	} else if (sysfs_streq("on", buf)) {
 		kbase_platform_dvfs_enable(true, MALI_DVFS_START_FREQ);
 	} else {
 		printk("invalid val -only [on, off] is accepted\n");
-	}
+	}*/
 #else
 	printk("G3D DVFS is disabled\n");
 #endif
