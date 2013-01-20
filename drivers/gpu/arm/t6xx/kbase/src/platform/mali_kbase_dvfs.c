@@ -244,6 +244,8 @@ static void mali_dvfs_event_proc(struct work_struct *w)
 		OSK_ASSERT(dvfs_status->step > dvfs_step_min);
 		dvfs_status->step--;
 	}
+	//pr_info("EVENT_PROC=%d-%d-%d-%d\n", platform->time_tick, MALI_DVFS_TIME_INTERVAL, dvfs_status->step, dvfs_status->utilisation);
+
 #ifdef CONFIG_MALI_T6XX_FREQ_LOCK
 	if ((dvfs_status->upper_lock >= 0)&&(dvfs_status->step > dvfs_status->upper_lock)) {
 		dvfs_status->step = dvfs_status->upper_lock;
@@ -349,6 +351,7 @@ int kbase_platform_dvfs_enable(bool enable, int freq)
 		dvfs_status->step = kbase_platform_dvfs_get_level(freq);
 		spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
 
+		//pr_info("DVS_ENABLE=%d-%d-%d-%d\n", platform->time_tick, MALI_DVFS_TIME_INTERVAL, dvfs_status->step, freq);
 		kbase_platform_dvfs_set_level(dvfs_status->kbdev, dvfs_status->step);
 	}
 
@@ -745,7 +748,9 @@ int kbase_platform_dvfs_get_level(int freq)
 
 unsigned int get_cur_gpu_freq()
 {
-	return cur_gpu_freq;
+	mali_dvfs_status *dvfs_status;
+	dvfs_status = &mali_dvfs_status_current;
+	return mali_dvfs_infotbl[dvfs_status->step].clock;
 }
 
 void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
@@ -753,14 +758,21 @@ void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
 	static int prev_level = -1;
 	int f;
 
+	mali_dvfs_status *dvfs_status;
+	dvfs_status = &mali_dvfs_status_current;
 	if (level == prev_level)
+	{
+		//pr_info("EXIT SET_LEVEL-%d-%d-%d-%d\n", level, prev_level, dvfs_status->step, dvfs_status->utilisation);
 		return;
+	}
 	
+	//pr_info("SET_LEVEL_ORIG=%d-%d-%d\n", level, dvfs_status->step, dvfs_status->utilisation);
 	if (level >= dvfs_step_max)
 		level = dvfs_step_max-1;
 	if (level < dvfs_step_min)
 		level = dvfs_step_min;
-
+	
+	//pr_info("SET_LEVEL_MOD=%d-%d-%d\n", level, dvfs_status->step, dvfs_status->utilisation);
 	cur_gpu_freq = mali_dvfs_infotbl[level].clock;
 	
 	if (WARN_ON((level >= MALI_DVFS_STEP)||(level < 0)))
