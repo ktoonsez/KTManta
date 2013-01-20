@@ -748,9 +748,10 @@ int kbase_platform_dvfs_get_level(int freq)
 
 unsigned int get_cur_gpu_freq()
 {
-	mali_dvfs_status *dvfs_status;
-	dvfs_status = &mali_dvfs_status_current;
-	return mali_dvfs_infotbl[dvfs_status->step].clock;
+	//mali_dvfs_status *dvfs_status;
+	//dvfs_status = &mali_dvfs_status_current;
+	//return mali_dvfs_infotbl[dvfs_status->step].clock;
+	return cur_gpu_freq;
 }
 
 void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
@@ -758,10 +759,10 @@ void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
 	static int prev_level = -1;
 	int f;
 
-	mali_dvfs_status *dvfs_status;
-	dvfs_status = &mali_dvfs_status_current;
 	if (level == prev_level)
 	{
+		//mali_dvfs_status *dvfs_status;
+		//dvfs_status = &mali_dvfs_status_current;
 		//pr_info("EXIT SET_LEVEL-%d-%d-%d-%d\n", level, prev_level, dvfs_status->step, dvfs_status->utilisation);
 		return;
 	}
