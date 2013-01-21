@@ -437,3 +437,10 @@ config SND_SOC_MAX9877
 
 config SND_SOC_TPA6130A2
 	tristate
+
+config SND_BOEFFLA
+	bool "Boeffla Sound Engine (AndiP71)"
+	default y if SND_SOC_WM8994=y
+	depends on SND_SOC_WM8994
+	help
+		Include the Boeffla Sound Engine by AndiP71
