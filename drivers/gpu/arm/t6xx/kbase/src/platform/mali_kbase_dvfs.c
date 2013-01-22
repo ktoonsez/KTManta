@@ -326,6 +326,32 @@ int kbase_platform_dvfs_get_enable_status(void)
 	return enable;
 }
 
+void boost_gpu(int freq)
+{
+	mali_dvfs_status *dvfs_status;
+	//struct kbase_device *kbdev;
+	unsigned long flags;
+	//struct exynos_context *platform;
+	int step = 0;
+	
+	dvfs_status = &mali_dvfs_status_current;
+	//kbdev = mali_dvfs_status_current.kbdev;
+	//OSK_ASSERT(kbdev != NULL);
+	//platform = (struct exynos_context *)kbdev->platform_context;
+
+	mutex_lock(&mali_enable_clock_lock);
+	
+	if (freq > cur_gpu_freq)
+	{
+		spin_lock_irqsave(&mali_dvfs_spinlock, flags);
+		step = kbase_platform_dvfs_get_level(freq);
+		spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
+		kbase_platform_dvfs_set_level(dvfs_status->kbdev, step);
+	}
+	
+	mutex_unlock(&mali_enable_clock_lock);
+}
+
 int kbase_platform_dvfs_enable(bool enable, int freq)
 {
 	mali_dvfs_status *dvfs_status;

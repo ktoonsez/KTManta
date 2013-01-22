@@ -582,6 +582,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 }
 
 extern void ktoonservative_is_active(bool val);
+extern void boost_gpu(int freq);
 
 void boostpulse_relay_kt()
 {
@@ -592,6 +593,7 @@ void boostpulse_relay_kt()
 			boostpulse_relay_sr = dbs_tuners_ins.sampling_rate;
 		boostpulse_relayf = true;
 		dbs_tuners_ins.sampling_rate = min_sampling_rate;
+		boost_gpu(533);
 	}
 }
 
