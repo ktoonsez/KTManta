@@ -29,15 +29,15 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(67)
-#define DEF_FREQUENCY_UP_THRESHOLD_HOTPLUG	(68)
+#define DEF_FREQUENCY_UP_THRESHOLD		(57)
+#define DEF_FREQUENCY_UP_THRESHOLD_HOTPLUG	(58)
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(52)
 #define DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG	(35)
-#define DEF_CPU_DOWN_BLOCK_CYCLES		(0)
+#define DEF_CPU_DOWN_BLOCK_CYCLES		(22)
 #define DEF_BOOST_CPU				(1000000)
 #define DEF_BOOST_CPU_TURN_ON_2ND_CORE		(1)
-#define DEF_BOOST_GPU				(400)
-#define DEF_BOOST_HOLD_CYCLES			(22)
+#define DEF_BOOST_GPU				(450)
+#define DEF_BOOST_HOLD_CYCLES			(34)
 #define DEF_DISABLE_HOTPLUGGING			(0)
 
 /*
@@ -675,8 +675,9 @@ void boostpulse_relay_kt()
 	{
 		if (dbs_tuners_ins.boost_gpu > 0)
 		{
+			int bpc = (dbs_tuners_ins.boost_hold_cycles / 2);
 			if (dbs_tuners_ins.boost_hold_cycles > 0)
-				boost_the_gpu(dbs_tuners_ins.boost_gpu, dbs_tuners_ins.boost_hold_cycles / 2);
+				boost_the_gpu(dbs_tuners_ins.boost_gpu, bpc);
 			else
 				boost_the_gpu(dbs_tuners_ins.boost_gpu, 0);
 		}
@@ -695,8 +696,9 @@ void boostpulse_relay_kt()
 	{
 		if (dbs_tuners_ins.boost_gpu > 0)
 		{
+			int bpc = (dbs_tuners_ins.boost_hold_cycles / 2);
 			if (dbs_tuners_ins.boost_hold_cycles > 0)
-				boost_the_gpu(dbs_tuners_ins.boost_gpu, dbs_tuners_ins.boost_hold_cycles / 2);
+				boost_the_gpu(dbs_tuners_ins.boost_gpu, bpc);
 			else
 				boost_the_gpu(dbs_tuners_ins.boost_gpu, 0);
 		}
