@@ -111,7 +111,7 @@ static struct dbs_tuners {
 	unsigned int boost_turn_on_2nd_core;
 	unsigned int boost_gpu;
 	unsigned int boost_hold_cycles;
-	unsigned int disable_hotpluging;
+	unsigned int disable_hotplugging;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
@@ -124,7 +124,7 @@ static struct dbs_tuners {
 	.boost_turn_on_2nd_core = DEF_BOOST_CPU_TURN_ON_2ND_CORE,
 	.boost_gpu = DEF_BOOST_GPU,
 	.boost_hold_cycles = DEF_BOOST_HOLD_CYCLES,
-	.disable_hotpluging = DEF_DISABLE_HOTPLUGGING,
+	.disable_hotplugging = DEF_DISABLE_HOTPLUGGING,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
 	.freq_step = 5,
@@ -226,7 +226,7 @@ show_one(cpu_down_block_cycles, cpu_down_block_cycles);
 show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
 show_one(boost_gpu, boost_gpu);
 show_one(boost_hold_cycles, boost_hold_cycles);
-show_one(disable_hotpluging, disable_hotpluging);
+show_one(disable_hotplugging, disable_hotplugging);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
 
@@ -396,7 +396,7 @@ static ssize_t store_boost_hold_cycles(struct kobject *a, struct attribute *b,
 	return count;
 }
 
-static ssize_t store_disable_hotpluging(struct kobject *a, struct attribute *b,
+static ssize_t store_disable_hotplugging(struct kobject *a, struct attribute *b,
 				    const char *buf, size_t count)
 {
 	unsigned int input;
@@ -406,7 +406,7 @@ static ssize_t store_disable_hotpluging(struct kobject *a, struct attribute *b,
 	if (input != 0 && input != 1)
 		input = 0;
 
-	dbs_tuners_ins.disable_hotpluging = input;
+	dbs_tuners_ins.disable_hotplugging = input;
 	return count;
 }
 
@@ -472,7 +472,7 @@ define_one_global_rw(boost_cpu);
 define_one_global_rw(boost_turn_on_2nd_core);
 define_one_global_rw(boost_gpu);
 define_one_global_rw(boost_hold_cycles);
-define_one_global_rw(disable_hotpluging);
+define_one_global_rw(disable_hotplugging);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
 
@@ -489,7 +489,7 @@ static struct attribute *dbs_attributes[] = {
 	&boost_turn_on_2nd_core.attr,
 	&boost_gpu.attr,
 	&boost_hold_cycles.attr,
-	&disable_hotpluging.attr,
+	&disable_hotplugging.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	NULL
@@ -638,7 +638,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		{
 			if (Lcpu_down_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
 			{
-				if (!dbs_tuners_ins.disable_hotpluging)
+				if (!dbs_tuners_ins.disable_hotplugging)
 					schedule_work_on(0, &hotplug_offline_work);
 				Lcpu_down_block_cycles = 0;
 			}
