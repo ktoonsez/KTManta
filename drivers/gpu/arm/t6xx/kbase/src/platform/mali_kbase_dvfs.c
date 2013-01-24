@@ -108,6 +108,10 @@ unsigned int dvfs_step_min = 0;
 unsigned int dvfs_step_max = 7;
 unsigned int dvfs_step_max_minus1 = 450;
 unsigned int cur_gpu_freq = 0;
+static bool lock_out_changes = false;
+static bool lock_out_changes_init = false;
+static int boost_hold_cycles = 0;
+static int boost_hold_cycles_cnt = 0;
 
 #ifdef CONFIG_MALI_T6XX_DVFS
 typedef struct _mali_dvfs_status_type{
@@ -326,11 +330,11 @@ int kbase_platform_dvfs_get_enable_status(void)
 	return enable;
 }
 
-void boost_the_gpu(int freq)
+void boost_the_gpu(int freq, int cycles)
 {
 	if (freq <= cur_gpu_freq)
 		return;
-		
+	
 	mali_dvfs_status *dvfs_status;
 	//struct kbase_device *kbdev;
 	unsigned long flags;
@@ -347,6 +351,12 @@ void boost_the_gpu(int freq)
 	spin_lock_irqsave(&mali_dvfs_spinlock, flags);
 	step = kbase_platform_dvfs_get_level(freq);
 	spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
+
+	boost_hold_cycles_cnt = 0;
+	boost_hold_cycles = cycles;
+	lock_out_changes = false;
+	lock_out_changes_init = true;
+
 	kbase_platform_dvfs_set_level(dvfs_status->kbdev, step);
 	
 	mutex_unlock(&mali_enable_clock_lock);
@@ -785,14 +795,25 @@ void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
 	static int prev_level = -1;
 	int f;
 
-	if (level == prev_level)
+	if (lock_out_changes)
+	{
+		boost_hold_cycles_cnt++;
+		if (boost_hold_cycles_cnt >= boost_hold_cycles)
+		{
+			boost_hold_cycles_cnt = 0;
+			lock_out_changes = false;
+			lock_out_changes_init = false;
+		}
+	}
+	if (level == prev_level || (lock_out_changes && boost_hold_cycles_cnt < boost_hold_cycles))
 	{
 		//mali_dvfs_status *dvfs_status;
 		//dvfs_status = &mali_dvfs_status_current;
 		//pr_info("EXIT SET_LEVEL-%d-%d-%d-%d\n", level, prev_level, dvfs_status->step, dvfs_status->utilisation);
 		return;
 	}
-	
+	if (lock_out_changes_init)
+		lock_out_changes = true;
 	//pr_info("SET_LEVEL_ORIG=%d-%d-%d\n", level, dvfs_status->step, dvfs_status->utilisation);
 	if (level >= dvfs_step_max)
 		level = dvfs_step_max-1;

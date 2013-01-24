@@ -60,7 +60,7 @@ static int boost_hold_cycles_cnt = 0;
 static unsigned int boostpulse_relay_sr = 0;
 
 extern void ktoonservative_is_active(bool val);
-extern void boost_the_gpu(int freq);
+extern void boost_the_gpu(int freq, int cycles);
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -523,8 +523,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			boost_hold_cycles_cnt = 0;
 		}
 		boost_hold_cycles_cnt++;
-		if (dbs_tuners_ins.boost_gpu > 0)
-			boost_the_gpu(dbs_tuners_ins.boost_gpu);
 
 		this_dbs_info->down_skip = 0;
 		/* if we are already at full speed then break out early */
@@ -675,6 +673,13 @@ void boostpulse_relay_kt()
 {
 	if (!boostpulse_relayf)
 	{
+		if (dbs_tuners_ins.boost_gpu > 0)
+		{
+			if (dbs_tuners_ins.boost_hold_cycles > 0)
+				boost_the_gpu(dbs_tuners_ins.boost_gpu, dbs_tuners_ins.boost_hold_cycles / 2);
+			else
+				boost_the_gpu(dbs_tuners_ins.boost_gpu, 0);
+		}
 		if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
 			schedule_work_on(0, &hotplug_online_work);
 		else if (dbs_tuners_ins.boost_turn_on_2nd_core == 0 && dbs_tuners_ins.boost_cpu == 0 && dbs_tuners_ins.boost_gpu == 0)
@@ -683,6 +688,7 @@ void boostpulse_relay_kt()
 		if (dbs_tuners_ins.sampling_rate != min_sampling_rate)
 			boostpulse_relay_sr = dbs_tuners_ins.sampling_rate;
 		boostpulse_relayf = true;
+		boost_hold_cycles_cnt = 0;
 		dbs_tuners_ins.sampling_rate = min_sampling_rate;
 	}
 }
