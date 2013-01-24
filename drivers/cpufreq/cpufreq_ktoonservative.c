@@ -691,6 +691,17 @@ void boostpulse_relay_kt()
 		boost_hold_cycles_cnt = 0;
 		dbs_tuners_ins.sampling_rate = min_sampling_rate;
 	}
+	else
+	{
+		if (dbs_tuners_ins.boost_gpu > 0)
+		{
+			if (dbs_tuners_ins.boost_hold_cycles > 0)
+				boost_the_gpu(dbs_tuners_ins.boost_gpu, dbs_tuners_ins.boost_hold_cycles / 2);
+			else
+				boost_the_gpu(dbs_tuners_ins.boost_gpu, 0);
+		}
+		boost_hold_cycles_cnt = 0;
+	}
 }
 
 static void hotplug_offline_work_fn(struct work_struct *work)

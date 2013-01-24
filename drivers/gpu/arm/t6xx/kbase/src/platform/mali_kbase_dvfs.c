@@ -333,7 +333,13 @@ int kbase_platform_dvfs_get_enable_status(void)
 void boost_the_gpu(int freq, int cycles)
 {
 	if (freq <= cur_gpu_freq)
+	{
+		boost_hold_cycles_cnt = 0;
+		boost_hold_cycles = cycles;
+		lock_out_changes = false;
+		lock_out_changes_init = true;
 		return;
+	}
 	
 	mali_dvfs_status *dvfs_status;
 	//struct kbase_device *kbdev;
