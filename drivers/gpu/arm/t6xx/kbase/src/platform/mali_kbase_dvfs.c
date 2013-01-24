@@ -326,8 +326,11 @@ int kbase_platform_dvfs_get_enable_status(void)
 	return enable;
 }
 
-void boost_gpu(int freq)
+void boost_the_gpu(int freq)
 {
+	if (freq <= cur_gpu_freq)
+		return;
+		
 	mali_dvfs_status *dvfs_status;
 	//struct kbase_device *kbdev;
 	unsigned long flags;
@@ -341,13 +344,10 @@ void boost_gpu(int freq)
 
 	mutex_lock(&mali_enable_clock_lock);
 	
-	if (freq > cur_gpu_freq)
-	{
-		spin_lock_irqsave(&mali_dvfs_spinlock, flags);
-		step = kbase_platform_dvfs_get_level(freq);
-		spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
-		kbase_platform_dvfs_set_level(dvfs_status->kbdev, step);
-	}
+	spin_lock_irqsave(&mali_dvfs_spinlock, flags);
+	step = kbase_platform_dvfs_get_level(freq);
+	spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
+	kbase_platform_dvfs_set_level(dvfs_status->kbdev, step);
 	
 	mutex_unlock(&mali_enable_clock_lock);
 }
