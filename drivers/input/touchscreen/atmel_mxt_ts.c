@@ -225,6 +225,27 @@
 /* Touchscreen configuration infomation */
 #define MXT_FW_MAGIC		0x4D3C2B1A
 
+extern void set_screen_on_off_mhz(unsigned long onoff);
+static bool ktoonservative_is_activef = false;
+static bool pegasusq_is_activef = false;
+static bool ondemand_is_activef = false;
+extern void boostpulse_relay_kt();
+extern void boostpulse_relay_pq();
+extern void boostpulse_relay_od();
+
+void ktoonservative_is_active(bool val)
+{
+	ktoonservative_is_activef = val;
+}
+void pegasusq_is_active(bool val)
+{
+	pegasusq_is_activef = val;
+}
+void ondemand_is_active(bool val)
+{
+	ondemand_is_activef = val;
+}
+
 /* Voltage supplies */
 static const char * const mxt_supply_names[] = {
 	/* keep the order for power sequence */
@@ -913,6 +934,18 @@ static irqreturn_t mxt_interrupt(int irq, void *dev_id)
 		object_type = data->reportid_table[reportid].type;
 
 		if (object_type == MXT_TOUCH_MULTI_T9) {
+			if ((message.message[0] & MXT_PRESS) || (message.message[0] & MXT_MOVE))
+			{
+				if (!mxt_stopped)
+				{
+					if (ktoonservative_is_activef)
+						boostpulse_relay_kt();
+					if (pegasusq_is_activef)
+						boostpulse_relay_pq();
+					if (ondemand_is_activef)
+						boostpulse_relay_od();
+				}
+			}
 			id = data->reportid_table[reportid].index;
 			mxt_input_touchevent(data, &message, id);
 		} else {
@@ -1817,12 +1850,16 @@ static const struct attribute_group mxt_attr_group = {
 	.attrs = mxt_attrs,
 };
 
-extern set_screen_on_off_mhz(unsigned long onoff);
-
 static int mxt_start(struct mxt_data *data)
 {
 	int error = 0;
 	
+	if (ktoonservative_is_activef)
+		boostpulse_relay_kt();
+	if (pegasusq_is_activef)
+		boostpulse_relay_pq();
+	if (ondemand_is_activef)
+		boostpulse_relay_od();
 	set_screen_on_off_mhz(1);
 	
 	mxt_stopped = false;
