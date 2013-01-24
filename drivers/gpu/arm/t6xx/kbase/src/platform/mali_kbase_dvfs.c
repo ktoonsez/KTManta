@@ -109,9 +109,9 @@ unsigned int dvfs_step_max = 7;
 unsigned int dvfs_step_max_minus1 = 450;
 unsigned int cur_gpu_freq = 0;
 static bool lock_out_changes = false;
-static bool lock_out_changes_init = false;
 static int boost_hold_cycles = 0;
 static int boost_hold_cycles_cnt = 0;
+static int boost_utilisation = 0;
 
 #ifdef CONFIG_MALI_T6XX_DVFS
 typedef struct _mali_dvfs_status_type{
@@ -292,11 +292,25 @@ int kbase_platform_dvfs_event(struct kbase_device *kbdev, u32 utilisation)
 		platform->time_tick = 0;
 	}
 
-	if ((platform->time_tick == MALI_DVFS_TIME_INTERVAL) &&
-		(platform->time_idle + platform->time_busy > 0))
-			platform->utilisation = (100*platform->time_busy) / (platform->time_idle + platform->time_busy);
+	if (lock_out_changes)
+	{
+		boost_hold_cycles_cnt++;
+		if (boost_hold_cycles_cnt >= boost_hold_cycles)
+		{
+			boost_hold_cycles_cnt = 0;
+			lock_out_changes = false;
+		}
+		platform->utilisation = boost_utilisation;
+		mali_dvfs_status_current.utilisation = boost_utilisation;
+	}
+	else
+	{
+		if ((platform->time_tick == MALI_DVFS_TIME_INTERVAL) &&
+			(platform->time_idle + platform->time_busy > 0))
+				platform->utilisation = (100*platform->time_busy) / (platform->time_idle + platform->time_busy);
 
-	mali_dvfs_status_current.utilisation = utilisation;
+		mali_dvfs_status_current.utilisation = utilisation;
+	}
 	spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
 
 	queue_work_on(0, mali_dvfs_wq, &mali_dvfs_work);
@@ -332,40 +346,33 @@ int kbase_platform_dvfs_get_enable_status(void)
 
 void boost_the_gpu(int freq, int cycles)
 {
+	int step = 0;
+	unsigned long flags;
+	mali_dvfs_status *dvfs_status;
+	struct kbase_device *kbdev;
+	struct exynos_context *platform;
+	
 	if (freq <= cur_gpu_freq)
 	{
 		boost_hold_cycles_cnt = 0;
 		boost_hold_cycles = cycles;
-		lock_out_changes = false;
-		lock_out_changes_init = true;
+		lock_out_changes = true;
 		return;
 	}
-	
-	mali_dvfs_status *dvfs_status;
-	//struct kbase_device *kbdev;
-	unsigned long flags;
-	//struct exynos_context *platform;
-	int step = 0;
-	
 	dvfs_status = &mali_dvfs_status_current;
-	//kbdev = mali_dvfs_status_current.kbdev;
-	//OSK_ASSERT(kbdev != NULL);
-	//platform = (struct exynos_context *)kbdev->platform_context;
+	kbdev = mali_dvfs_status_current.kbdev;
+	OSK_ASSERT(kbdev != NULL);
+	platform = (struct exynos_context *)kbdev->platform_context;
 
-	mutex_lock(&mali_enable_clock_lock);
-	
 	spin_lock_irqsave(&mali_dvfs_spinlock, flags);
 	step = kbase_platform_dvfs_get_level(freq);
 	spin_unlock_irqrestore(&mali_dvfs_spinlock, flags);
-
-	boost_hold_cycles_cnt = 0;
-	boost_hold_cycles = cycles;
-	lock_out_changes = false;
-	lock_out_changes_init = true;
-
-	kbase_platform_dvfs_set_level(dvfs_status->kbdev, step);
 	
-	mutex_unlock(&mali_enable_clock_lock);
+	boost_utilisation = mali_dvfs_infotbl[step].max_threshold;
+	dvfs_status->step = step;
+	platform->time_tick = MALI_DVFS_TIME_INTERVAL;
+	lock_out_changes = true;
+	kbase_platform_dvfs_set_level(dvfs_status->kbdev, step);
 }
 
 int kbase_platform_dvfs_enable(bool enable, int freq)
@@ -654,7 +661,7 @@ int kbase_platform_set_voltage(struct device *dev, int vol)
 
 	if (regulator_set_voltage(g3d_regulator, vol, vol) != 0)
 	{
-		printk("[kbase_platform_set_voltage] failed to set voltage\n");
+		//printk("[kbase_platform_set_voltage] failed to set voltage\n");
 		return -1;
 	}
 #endif
@@ -801,25 +808,14 @@ void kbase_platform_dvfs_set_level(kbase_device *kbdev, int level)
 	static int prev_level = -1;
 	int f;
 
-	if (lock_out_changes)
-	{
-		boost_hold_cycles_cnt++;
-		if (boost_hold_cycles_cnt >= boost_hold_cycles)
-		{
-			boost_hold_cycles_cnt = 0;
-			lock_out_changes = false;
-			lock_out_changes_init = false;
-		}
-	}
-	if (level == prev_level || (lock_out_changes && boost_hold_cycles_cnt < boost_hold_cycles))
+	if (level == prev_level)
 	{
 		//mali_dvfs_status *dvfs_status;
 		//dvfs_status = &mali_dvfs_status_current;
 		//pr_info("EXIT SET_LEVEL-%d-%d-%d-%d\n", level, prev_level, dvfs_status->step, dvfs_status->utilisation);
 		return;
 	}
-	if (lock_out_changes_init)
-		lock_out_changes = true;
+
 	//pr_info("SET_LEVEL_ORIG=%d-%d-%d\n", level, dvfs_status->step, dvfs_status->utilisation);
 	if (level >= dvfs_step_max)
 		level = dvfs_step_max-1;
