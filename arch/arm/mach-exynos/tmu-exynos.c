@@ -39,6 +39,7 @@ static int lcpu_start_throttle;
 static int lcpu_stop_throttle;
 static int lmem_start_throttle;
 static int lmem_stop_throttle;
+static int lmin_throttle_mhz = 1200000;
 
 static DEFINE_MUTEX(tmu_lock);
 
@@ -103,7 +104,7 @@ static void tmu_monitor(struct work_struct *work)
 	int cur_temp;
 
 	cur_temp = get_cur_temp(info);
-	pr_alert("GET_CUR_TEMP: c=%d start=%d stop=%d\n", cur_temp, lcpu_start_throttle, lcpu_stop_throttle);
+	//pr_alert("GET_CUR_TEMP: c=%d start=%d stop=%d state=%d\n", cur_temp, lcpu_start_throttle, lcpu_stop_throttle, info->tmu_state);
 	ginfo = info;
 	
 	dev_dbg(info->dev, "Current: %dc, FLAG=%d\n", cur_temp, info->tmu_state);
@@ -126,7 +127,12 @@ static void tmu_monitor(struct work_struct *work)
 		if (cur_temp >= data->ts.start_tripping)
 			info->tmu_state = TMU_STATUS_TRIPPED;
 		else if (cur_temp > lcpu_stop_throttle)
-			exynos_thermal_throttle();
+		{
+			if (cur_temp > (lcpu_start_throttle+15))
+				exynos_thermal_throttle(800000);
+			else
+				exynos_thermal_throttle(lmin_throttle_mhz);
+		}
 		else
 			info->tmu_state = TMU_STATUS_NORMAL;
 		break;
@@ -135,7 +141,10 @@ static void tmu_monitor(struct work_struct *work)
 			panic("Emergency thermal shutdown: temp=%d\n",
 			      cur_temp);
 		if (cur_temp >= data->ts.start_tripping)
+		{
 			pr_err("thermal tripped: temp=%d\n", cur_temp);
+			exynos_thermal_throttle(500000);
+		}
 		else
 			info->tmu_state = TMU_STATUS_THROTTLED;
 		break;
@@ -232,7 +241,7 @@ static int exynos_tmu_init(struct tmu_info *info)
 	info->tmu_state = TMU_STATUS_INIT;
 
 	/* To poll current temp, set sampling rate */
-	info->sampling_rate = msecs_to_jiffies(1000);
+	info->sampling_rate = msecs_to_jiffies(250);
 
 	/* Need to initail regsiter setting after getting parameter info */
 	/* [28:23] vref [11:8] slope - Tunning parameter */
@@ -428,6 +437,23 @@ static ssize_t store_mem_stop_throttle(struct kobject *kobj,
 	return count;
 }
 
+static ssize_t show_min_throttle_mhz(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", lmin_throttle_mhz);
+}
+
+static ssize_t store_min_throttle_mhz(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned int value;
+
+	ret = sscanf(buf, "%u", &value);
+	lmin_throttle_mhz = value;
+	return count;
+}
+
 static ssize_t show_cur_temp(struct kobject *kobj,
 			struct attribute *attr, char *buf)
 {
@@ -441,6 +467,7 @@ define_one_global_rw(cpu_start_throttle);
 define_one_global_rw(cpu_stop_throttle);
 define_one_global_rw(mem_start_throttle);
 define_one_global_rw(mem_stop_throttle);
+define_one_global_rw(min_throttle_mhz);
 define_one_global_ro(cur_temp);
 
 static struct attribute *cput_attributes[] = {
@@ -448,6 +475,7 @@ static struct attribute *cput_attributes[] = {
 	&cpu_stop_throttle.attr,
 	&mem_start_throttle.attr,
 	&mem_stop_throttle.attr,
+	&min_throttle_mhz.attr,
 	&cur_temp.attr,
 	NULL,
 };

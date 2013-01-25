@@ -233,13 +233,16 @@ static unsigned int exynos_thermal_lower_speed(void)
 	unsigned int max = 0;
 	unsigned int curr;
 	int i;
+	unsigned int cur;
+	
 	struct cpufreq_frequency_table *freq_table = exynos_info->freq_table;
 
 	curr = max_thermal_freq;
-
+	cur = exynos_getspeed(0);
+	
 	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
 		if (freq_table[i].frequency != CPUFREQ_ENTRY_INVALID &&
-				freq_table[i].frequency < curr) {
+				freq_table[i].frequency < curr && freq_table[i].frequency < cur) {
 			max = freq_table[i].frequency;
 			break;
 		}
@@ -251,7 +254,7 @@ static unsigned int exynos_thermal_lower_speed(void)
 	return max;
 }
 
-void exynos_thermal_throttle(void)
+void exynos_thermal_throttle(unsigned int min_mhz)
 {
 	unsigned int cur;
 
@@ -264,8 +267,13 @@ void exynos_thermal_throttle(void)
 	mutex_lock(&cpufreq_lock);
 
 	max_thermal_freq = exynos_thermal_lower_speed();
-
-	pr_debug("%s: temperature too high, cpu throttle at max %u\n",
+	if (max_thermal_freq < min_mhz)
+	{
+		pr_alert("%s: OVERRIDE THERMAL MHZ %u-%u\n",
+				__func__, max_thermal_freq, min_mhz);
+		max_thermal_freq = min_mhz;
+	}	
+	pr_alert("%s: temperature too high, cpu throttling %u\n",
 			__func__, max_thermal_freq);
 
 	if (!exynos_cpufreq_disable) {
@@ -281,20 +289,23 @@ void exynos_thermal_throttle(void)
 
 void exynos_thermal_unthrottle(void)
 {
-
+	//pr_alert("UNTHROTTLE ENTER1-%d-%d", max_thermal_freq, max_freq);
 	if (!exynos_cpufreq_init_done)
 		return;
 
+	//pr_alert("UNTHROTTLE ENTER2-%d-%d", max_thermal_freq, max_freq);
 	mutex_lock(&cpufreq_lock);
 
+	//pr_alert("UNTHROTTLE ENTER3-%d-%d", max_thermal_freq, max_freq);
 	if (max_thermal_freq == max_freq) {
-		pr_warn("%s: not throttling\n", __func__);
+		pr_alert("%s: not throttling\n", __func__);
 		goto out;
 	}
 
 	max_thermal_freq = max_freq;
+	//pr_alert("UNTHROTTLE ENTER4-%d-%d", max_thermal_freq, max_freq);
 
-	pr_debug("%s: temperature reduced, ending cpu throttling\n", __func__);
+	pr_alert("%s: temperature reduced, ending cpu throttling\n", __func__);
 
 	if (!exynos_cpufreq_disable) {
 		freqs.old = exynos_getspeed(0);
