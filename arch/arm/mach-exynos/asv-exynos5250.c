@@ -213,12 +213,12 @@ ssize_t hlpr_exynos5250_get_volt_stock(enum asv_type_id typeid, char *buf, int i
 			if (typeid == ID_ARM)
 			{
 				for (i = 0; i < dvfs_level_nr[typeid]; i++)
-					len += sprintf(buf + len, "%8u: %8d\n", arm_asv_volt_info[i][0], arm_asv_volt_info[i][1+asv_group[typeid]]);
+					len += sprintf(buf + len, "%8u: %8d\n", arm_asv_volt_info_stock[i][0], arm_asv_volt_info_stock[i][1+asv_group[typeid]]);
 			}
 			else if (typeid == ID_G3D)
 			{
 				for (i = 0; i < dvfs_level_nr[typeid]; i++)
-					len += sprintf(buf + len, "%8u: %8d\n", g3d_asv_volt_info[i][0], g3d_asv_volt_info[i][1+asv_group[typeid]]);
+					len += sprintf(buf + len, "%8u: %8d\n", g3d_asv_volt_info_stock[i][0], g3d_asv_volt_info_stock[i][1+asv_group[typeid]]);
 			}
 		}
 		else
@@ -226,12 +226,12 @@ ssize_t hlpr_exynos5250_get_volt_stock(enum asv_type_id typeid, char *buf, int i
 			if (typeid == ID_ARM)
 			{
 				for (i = 0; i < dvfs_level_nr[typeid]; i++)
-					len += sprintf(buf + len, "%dmhz: %d mV\n", arm_asv_volt_info[i][0]/1000, arm_asv_volt_info[i][1+asv_group[typeid]]/1000);
+					len += sprintf(buf + len, "%dmhz: %d mV\n", arm_asv_volt_info_stock[i][0]/1000, arm_asv_volt_info_stock[i][1+asv_group[typeid]]/1000);
 			}
 			else if (typeid == ID_G3D)
 			{
 				for (i = 0; i < dvfs_level_nr[typeid]; i++)
-					len += sprintf(buf + len, "%dmhz: %d mV\n", g3d_asv_volt_info[i][0]/1000, g3d_asv_volt_info[i][1+asv_group[typeid]]/1000);
+					len += sprintf(buf + len, "%dmhz: %d mV\n", g3d_asv_volt_info_stock[i][0]/1000, g3d_asv_volt_info_stock[i][1+asv_group[typeid]]/1000);
 			}
 		}
 	}
