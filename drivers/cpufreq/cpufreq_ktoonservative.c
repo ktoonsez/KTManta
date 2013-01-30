@@ -37,7 +37,7 @@
 #define DEF_BOOST_CPU				(1000000)
 #define DEF_BOOST_CPU_TURN_ON_2ND_CORE		(1)
 #define DEF_BOOST_GPU				(450)
-#define DEF_BOOST_HOLD_CYCLES			(34)
+#define DEF_BOOST_HOLD_CYCLES			(22)
 #define DEF_DISABLE_HOTPLUGGING			(0)
 
 /*
