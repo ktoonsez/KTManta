@@ -58,6 +58,7 @@ static unsigned int Lcpu_up_block_cycles = 0;
 static bool boostpulse_relayf = false;
 static int boost_hold_cycles_cnt = 0;
 static unsigned int boostpulse_relay_sr = 0;
+static bool screen_is_on = true;
 
 extern void ktoonservative_is_active(bool val);
 extern void boost_the_gpu(int freq, int cycles);
@@ -112,6 +113,7 @@ static struct dbs_tuners {
 	unsigned int boost_gpu;
 	unsigned int boost_hold_cycles;
 	unsigned int disable_hotplugging;
+	unsigned int no_2nd_cpu_screen_off;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
@@ -125,6 +127,7 @@ static struct dbs_tuners {
 	.boost_gpu = DEF_BOOST_GPU,
 	.boost_hold_cycles = DEF_BOOST_HOLD_CYCLES,
 	.disable_hotplugging = DEF_DISABLE_HOTPLUGGING,
+	.no_2nd_cpu_screen_off = 1,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
 	.freq_step = 5,
@@ -227,6 +230,7 @@ show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
 show_one(boost_gpu, boost_gpu);
 show_one(boost_hold_cycles, boost_hold_cycles);
 show_one(disable_hotplugging, disable_hotplugging);
+show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
 
@@ -396,8 +400,7 @@ static ssize_t store_boost_hold_cycles(struct kobject *a, struct attribute *b,
 	return count;
 }
 
-static ssize_t store_disable_hotplugging(struct kobject *a, struct attribute *b,
-				    const char *buf, size_t count)
+static ssize_t store_disable_hotplugging(struct kobject *a, struct attribute *b, const char *buf, size_t count)
 {
 	unsigned int input;
 	int ret;
@@ -407,6 +410,19 @@ static ssize_t store_disable_hotplugging(struct kobject *a, struct attribute *b,
 		input = 0;
 
 	dbs_tuners_ins.disable_hotplugging = input;
+	return count;
+}
+
+static ssize_t store_no_2nd_cpu_screen_off(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.no_2nd_cpu_screen_off = input;
 	return count;
 }
 
@@ -473,6 +489,7 @@ define_one_global_rw(boost_turn_on_2nd_core);
 define_one_global_rw(boost_gpu);
 define_one_global_rw(boost_hold_cycles);
 define_one_global_rw(disable_hotplugging);
+define_one_global_rw(no_2nd_cpu_screen_off);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
 
@@ -490,6 +507,7 @@ static struct attribute *dbs_attributes[] = {
 	&boost_gpu.attr,
 	&boost_hold_cycles.attr,
 	&disable_hotplugging.attr,
+	&no_2nd_cpu_screen_off.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	NULL
@@ -601,7 +619,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
 		if (num_online_cpus() < 2 && policy->cur != policy->min)
 		{
-			if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
+			if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles && (dbs_tuners_ins.no_2nd_cpu_screen_off == 0 || (dbs_tuners_ins.no_2nd_cpu_screen_off == 1 && screen_is_on)))
 			{
 				schedule_work_on(0, &hotplug_online_work);
 				Lcpu_up_block_cycles = 0;
@@ -667,6 +685,11 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				CPUFREQ_RELATION_H);
 		return;
 	}
+}
+
+void screen_is_on_relay(bool state)
+{
+	screen_is_on = state;
 }
 
 void boostpulse_relay_kt()
