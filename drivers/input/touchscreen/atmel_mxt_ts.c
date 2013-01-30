@@ -232,7 +232,7 @@ static bool ondemand_is_activef = false;
 extern void boostpulse_relay_kt();
 extern void boostpulse_relay_pq();
 extern void boostpulse_relay_od();
-extern void screen_is_on_relay(bool state);
+extern void screen_is_on_relay_kt(bool state);
 
 void ktoonservative_is_active(bool val)
 {
@@ -1857,7 +1857,7 @@ static int mxt_start(struct mxt_data *data)
 	
 	if (ktoonservative_is_activef)
 	{
-		screen_is_on_relay(true);
+		screen_is_on_relay_kt(true);
 		boostpulse_relay_kt();
 	}
 	if (pegasusq_is_activef)
@@ -1908,7 +1908,7 @@ static void mxt_stop(struct mxt_data *data)
 	
 	if (ktoonservative_is_activef)
 	{
-		screen_is_on_relay(false);
+		screen_is_on_relay_kt(false);
 	}
 
 	set_screen_on_off_mhz(0);

@@ -687,7 +687,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 }
 
-void screen_is_on_relay(bool state)
+void screen_is_on_relay_kt(bool state)
 {
 	screen_is_on = state;
 }
