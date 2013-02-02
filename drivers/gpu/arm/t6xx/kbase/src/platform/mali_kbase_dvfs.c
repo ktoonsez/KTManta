@@ -654,16 +654,19 @@ int kbase_platform_get_voltage(struct device *dev, int *vol)
 int kbase_platform_set_voltage(struct device *dev, int vol)
 {
 #ifdef CONFIG_REGULATOR
+	int ret = 0;
 	if (!g3d_regulator) {
 		printk("[kbase_platform_set_voltage] g3d_regulator is not initialized\n");
 		return -1;
 	}
-
-	if (regulator_set_voltage(g3d_regulator, vol, vol) != 0)
+	
+	ret = regulator_set_voltage(g3d_regulator, vol, vol);
+	if (ret != 0)
 	{
-		//printk("[kbase_platform_set_voltage] failed to set voltage\n");
+		printk("[kbase_platform_set_voltage] failed to set voltage-%d-%d\n", ret, vol);
 		return -1;
 	}
+	//pr_info("REGULATOR_SET_VOLT=%d\n", vol);
 #endif
 	return 0;
 }
