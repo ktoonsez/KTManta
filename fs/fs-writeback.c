@@ -980,6 +980,8 @@ int bdi_writeback_thread(void *data)
 			 */
 			schedule();
 		}
+
+		try_to_freeze();
 	}
 
 	/* Flush any work that raced with us exiting */
@@ -989,7 +991,6 @@ int bdi_writeback_thread(void *data)
 	trace_writeback_thread_stop(bdi);
 	return 0;
 }
-
 
 /*
  * Start writeback of `nr_pages' pages.  If `nr_pages' is zero, write back
