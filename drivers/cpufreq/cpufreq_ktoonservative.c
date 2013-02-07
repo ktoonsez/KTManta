@@ -651,13 +651,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		return;
 	}
 
-	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
+	if (max_load < dbs_tuners_ins.down_threshold_hotplug && !dbs_tuners_ins.disable_hotpluging) {
 		if (num_online_cpus() > 1)
 		{
 			if (Lcpu_down_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
 			{
-				if (!dbs_tuners_ins.disable_hotplugging)
-					schedule_work_on(0, &hotplug_offline_work);
+				schedule_work_on(0, &hotplug_offline_work);
 				Lcpu_down_block_cycles = 0;
 			}
 			Lcpu_down_block_cycles++;
