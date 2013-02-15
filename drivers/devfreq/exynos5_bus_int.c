@@ -283,7 +283,7 @@ struct exynos5_bus_int_handle *exynos5_bus_int_get(unsigned long min_freq,
 	/* If polling, boost the frequency for the first poll cycle */
 	handle->boost = poll;
 	handle->poll = poll;
-	INIT_DELAYED_WORK_DEFERRABLE(&handle->work, exynos5_int_cancel_boost);
+	INIT_DEFERRABLE_WORK(&handle->work, exynos5_int_cancel_boost);
 
 	mutex_lock(&exynos5_bus_int_requests_lock);
 	list_add_tail(&handle->node, &exynos5_bus_int_requests);
@@ -433,7 +433,7 @@ static __devinit int exynos5_busfreq_int_probe(struct platform_device *pdev)
 	if (!data->ppmu)
 		goto err_ppmu_get;
 
-	INIT_DELAYED_WORK_DEFERRABLE(&data->work, exynos5_int_poll_work);
+	INIT_DEFERRABLE_WORK(&data->work, exynos5_int_poll_work);
 
 	data->devfreq = devfreq_add_device(dev, &exynos5_devfreq_int_profile,
 					   &devfreq_simple_ondemand,

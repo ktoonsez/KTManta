@@ -521,7 +521,7 @@ static int __devinit tmu_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	INIT_DELAYED_WORK_DEFERRABLE(&info->polling, tmu_monitor);
+	INIT_DEFERRABLE_WORK(&info->polling, tmu_monitor);
 
 	tmu_monitor_wq = create_freezable_workqueue("tmu");
 	if (!tmu_monitor_wq) {
