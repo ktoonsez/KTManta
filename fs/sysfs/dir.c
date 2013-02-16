@@ -497,7 +497,7 @@ int sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 	int ret;
 
 	ret = __sysfs_add_one(acxt, sd);
-	if (ret == -EEXIST) {
+	/*if (ret == -EEXIST) {
 		char *path = kzalloc(PATH_MAX, GFP_KERNEL);
 		WARN(1, KERN_WARNING
 		     "sysfs: cannot create duplicate filename '%s'\n",
@@ -507,7 +507,7 @@ int sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 				       strlcat(path, sd->s_name, PATH_MAX),
 				       path));
 		kfree(path);
-	}
+	}*/
 
 	return ret;
 }
