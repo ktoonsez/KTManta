@@ -32,6 +32,8 @@
 
 #include <trace/events/power.h>
 #include <mach/asv-exynos.h>
+static char scaling_sched_screen_off_sel[16];
+static char scaling_sched_screen_off_sel_prev[16];
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -684,6 +686,20 @@ static ssize_t show_cpuinfo_cur_freq(struct cpufreq_policy *policy,
 }
 
 
+static ssize_t show_scaling_sched_screen_off(struct cpufreq_policy *policy, char *buf)
+{
+	return scnprintf(buf, 16, "%s\n",
+				scaling_sched_screen_off_sel);
+}
+
+static ssize_t store_scaling_sched_screen_off(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(buf, "%15s", scaling_sched_screen_off_sel);
+	return count;
+}
+
 /**
  * show_scaling_governor - show the current policy for the specified CPU
  */
@@ -728,6 +744,14 @@ unsigned int set_battery_max_level(unsigned int cpu_mhz_lvl, unsigned int gpu_mh
 		return 1700000;		
 }
 
+extern int elevator_change_relay(const char *name);
+
+void set_cur_sched(const char *name)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(name, "%15s", scaling_sched_screen_off_sel_prev);
+}
+
 void screen_on_off(struct work_struct *notification_off_work)
 {
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
@@ -738,6 +762,7 @@ void screen_on_off(struct work_struct *notification_off_work)
 	
 	pr_alert("SET_SCREEN_ON_OFF_MHZ - %lx - so=%d - soo=%d\n", Lonoff, Lscreen_off_scaling_mhz, Lscreen_off_scaling_mhz_orig);
 
+	//CPU Stuff
 	if (Lonoff == 0 && Lscreen_off_scaling_mhz > 0)
 	{
 		if (!bluetooth_scaling_mhz_active)
@@ -771,6 +796,31 @@ void screen_on_off(struct work_struct *notification_off_work)
 		{
 			gpu_max = gpu_mhz_lvl;
 			hlpr_set_min_max_G3D(gpu_min, gpu_max);
+		}
+	}
+	
+	//Scheduler stuff
+	if (Lonoff == 0)
+	{
+		if (!cpu_is_offline(0) && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
+		{
+			elevator_change_relay(scaling_sched_screen_off_sel);
+			pr_alert("cpufreq_gov_suspend_gov_SCHED: %s\n", scaling_sched_screen_off_sel);
+		}
+		else
+			pr_alert("cpufreq_gov_suspend_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel);
+	}
+	else if (Lonoff == 1)
+	{
+	
+		if (!cpu_is_offline(0) && scaling_sched_screen_off_sel_prev != NULL && scaling_sched_screen_off_sel_prev[0] != '\0' && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
+		{
+			elevator_change_relay(scaling_sched_screen_off_sel_prev);
+			pr_alert("cpufreq_gov_resume_gov_SCHED: %s\n", scaling_sched_screen_off_sel_prev);
+		}
+		else
+		{
+			pr_alert("cpufreq_gov_resume_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel_prev);
 		}
 	}
 }
@@ -1077,6 +1127,7 @@ cpufreq_freq_attr_rw(battery_ctrl_cpu_mhz_lvl_high);
 cpufreq_freq_attr_rw(battery_ctrl_gpu_mhz_lvl_low);
 cpufreq_freq_attr_rw(battery_ctrl_gpu_mhz_lvl_high);
 cpufreq_freq_attr_rw(scaling_governor);
+cpufreq_freq_attr_rw(scaling_sched_screen_off);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(UV_mV_table);
@@ -1103,6 +1154,7 @@ static struct attribute *default_attrs[] = {
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
+	&scaling_sched_screen_off.attr,
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
