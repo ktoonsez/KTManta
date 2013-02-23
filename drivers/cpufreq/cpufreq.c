@@ -744,7 +744,7 @@ unsigned int set_battery_max_level(unsigned int cpu_mhz_lvl, unsigned int gpu_mh
 		return 1700000;		
 }
 
-extern int elevator_change_relay(const char *name);
+extern int elevator_change_relay(const char *name, int screen_status);
 
 void set_cur_sched(const char *name)
 {
@@ -804,7 +804,7 @@ void screen_on_off(struct work_struct *notification_off_work)
 	{
 		if (!cpu_is_offline(0) && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
 		{
-			elevator_change_relay(scaling_sched_screen_off_sel);
+			elevator_change_relay(scaling_sched_screen_off_sel, 1);
 			pr_alert("cpufreq_gov_suspend_gov_SCHED: %s\n", scaling_sched_screen_off_sel);
 		}
 		else
@@ -815,7 +815,7 @@ void screen_on_off(struct work_struct *notification_off_work)
 	
 		if (!cpu_is_offline(0) && scaling_sched_screen_off_sel_prev != NULL && scaling_sched_screen_off_sel_prev[0] != '\0' && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
 		{
-			elevator_change_relay(scaling_sched_screen_off_sel_prev);
+			elevator_change_relay(scaling_sched_screen_off_sel_prev, 2);
 			pr_alert("cpufreq_gov_resume_gov_SCHED: %s\n", scaling_sched_screen_off_sel_prev);
 		}
 		else

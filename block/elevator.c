@@ -38,12 +38,14 @@
 #include <trace/events/block.h>
 
 #include "blk.h"
+#include "kt_save_sched.h"
 
 static DEFINE_SPINLOCK(elv_list_lock);
 static LIST_HEAD(elv_list);
 
 static struct request_queue *globalq[5];
 static unsigned int queue_size = 0;
+
 /*
  * Merge hash stuff.
  */
@@ -991,12 +993,20 @@ fail_register:
 	return err;
 }
 
-int elevator_change_relay(const char *name)
+int elevator_change_relay(const char *name, int screen_status)
 {
 	int i = 0;
+	load_prev_screen_on = screen_status;
+	pr_alert("CHANGE_SCHEDULER0-%d\n", load_prev_screen_on);
 	//for (i = 0; i < queue_size; i++)
 		elevator_change(globalq[i], name);
+	load_prev_screen_on = 0;
 	return 0;
+}
+
+int isload_prev_screen_on(void)
+{
+	return load_prev_screen_on;
 }
 
 extern void set_cur_sched(const char *name);
