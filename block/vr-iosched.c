@@ -356,8 +356,8 @@ static void *vr_init_queue(struct request_queue *q)
 		vd->rev_penalty = rev_penalty;
 		if (load_prev_screen_on == 0)
 		{
-			gsched_vars[0] = vd->fifo_expire[SYNC];
-			gsched_vars[1] = vd->fifo_expire[ASYNC];
+			gsched_vars[0] = vd->fifo_expire[SYNC] * 10;
+			gsched_vars[1] = vd->fifo_expire[ASYNC] * 10;
 			gsched_vars[2] = vd->fifo_batch;
 			gsched_vars[3] = vd->rev_penalty;
 		}

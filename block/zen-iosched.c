@@ -180,8 +180,8 @@ static void *zen_init_queue(struct request_queue *q)
 		zdata->fifo_batch = fifo_batch;
 		if (load_prev_screen_on == 0)
 		{
-			gsched_vars[0] = zdata->fifo_expire[SYNC];
-			gsched_vars[1] = zdata->fifo_expire[ASYNC];
+			gsched_vars[0] = zdata->fifo_expire[SYNC] * 10;
+			gsched_vars[1] = zdata->fifo_expire[ASYNC] * 10;
 			gsched_vars[2] = zdata->fifo_batch;
 		}
 	}
