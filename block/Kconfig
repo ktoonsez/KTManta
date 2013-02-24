@@ -113,3 +113,13 @@ config BLOCK_COMPAT
 	default y
 
 source block/Kconfig.iosched
+
+config IOSCHED_FIOPS
+       tristate "IOPS based I/O scheduler"
+       default y
+       ---help---
+         This is an IOPS based I/O scheduler. It will try to distribute
+          IOPS equally among all processes in the system. It's mainly for
+          Flash based storage.
+
+
