@@ -9,7 +9,6 @@ export USE_SEC_FIPS_MODE=true
 export ARCH=arm
 export SUBARCH=arm
 export CROSS_COMPILE=$PARENT_DIR/linaro4.7/bin/arm-eabi-
-export CONFIG_SCHED_BFS=y
 
 echo "Remove old Package Files"
 rm -rf $PACKAGEDIR/*
