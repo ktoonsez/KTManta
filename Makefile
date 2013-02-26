@@ -365,6 +365,8 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
+XX_MODULO  = -fmodulo-sched -fmodulo-sched-allow-regmoves
+
 KBUILD_CFLAGS   := -Wall -Wundef -O3 -Wstrict-prototypes -Wno-trigraphs -Wno-strict-aliasing \
 		   -fno-common \
 		   -Werror-implicit-function-declaration \
@@ -379,7 +381,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -O3 -Wstrict-prototypes -Wno-trigraphs -Wno-str
 		   -ftree-loop-linear \
 		   -mtune=cortex-a15 \
 		   -marm \
-		   -mfpu=neon-vfpv4
+		   -mfpu=neon-vfpv4 \
+		   $(XX_MODULO)
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
