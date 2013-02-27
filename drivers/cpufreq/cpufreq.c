@@ -28,7 +28,6 @@
 #include <linux/cpu.h>
 #include <linux/completion.h>
 #include <linux/mutex.h>
-#include <linux/sched.h>
 #include <linux/syscore_ops.h>
 
 #include <trace/events/power.h>
@@ -83,6 +82,13 @@ static bool bluetooth_overwrote_screen_off = false;
 
 static unsigned int gpu_min = 100;
 static unsigned int gpu_max = 533;
+unsigned int batt_lvl_low = 0;
+unsigned int batt_lvl_high = 0;
+unsigned int mhz_lvl_low = 0;
+unsigned int mhz_lvl_high = 0;
+extern void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
+extern unsigned int get_batt_level();
+extern unsigned int get_cur_gpu_freq();
 
 #define lock_policy_rwsem(mode, cpu)					\
 int lock_policy_rwsem_##mode					\
@@ -527,6 +533,102 @@ static ssize_t store_scaling_max_freq_gpu(struct cpufreq_policy *policy, const c
 	return count;
 }
 
+static ssize_t show_battery_ctrl_batt_lvl_low(struct cpufreq_policy *policy,	char *buf)
+{
+	return sprintf(buf, "%u\n", batt_lvl_low);
+}
+
+static ssize_t store_battery_ctrl_batt_lvl_low(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (input < 0 || input > 100)
+		input = 0;
+	batt_lvl_low = input;
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high);
+	return count;
+}
+
+static ssize_t show_battery_ctrl_batt_lvl_high(struct cpufreq_policy *policy,	char *buf)
+{
+	return sprintf(buf, "%u\n", batt_lvl_high);
+}
+
+static ssize_t store_battery_ctrl_batt_lvl_high(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (input < 0 || input > 100)
+		input = 0;
+	batt_lvl_high = input;
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high);
+	return count;
+}
+
+static ssize_t show_battery_ctrl_mhz_lvl_low(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", mhz_lvl_low);
+}
+
+
+static ssize_t store_battery_ctrl_mhz_lvl_low(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	//pr_alert("BATT_SET_LVL_LOW1: %u-%u-%u\n", input, policy->min, policy->max);
+	
+	if (input < 100000 || input > 2100000)
+		input = 0;
+	//pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
+	mhz_lvl_low = input;
+	//pr_alert("BATT_SET_LVL_LOW3: %u-%u-%u\n", dbs_tuners_ins.battery_ctrl_mhz_lvl_low, policy->min, policy->max);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high);
+	return count;
+}
+
+static ssize_t show_battery_ctrl_mhz_lvl_high(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", mhz_lvl_high);
+}
+
+
+static ssize_t store_battery_ctrl_mhz_lvl_high(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	//pr_alert("BATT_SET_LVL_LOW1: %u-%u-%u\n", input, policy->min, policy->max);
+	
+	if (input < 100000 || input > 2100000)
+		input = 0;
+	//pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
+	mhz_lvl_high = input;
+	//pr_alert("BATT_SET_LVL_LOW3: %u-%u-%u\n", dbs_tuners_ins.battery_ctrl_mhz_lvl_low, policy->min, policy->max);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, mhz_lvl_low, mhz_lvl_high);
+	return count;
+}
+
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
  */
@@ -555,12 +657,34 @@ static ssize_t show_scaling_governor(struct cpufreq_policy *policy, char *buf)
 	return -EINVAL;
 }
 
+unsigned int set_battery_max_level(unsigned int value)
+{
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	struct cpufreq_policy new_policy;
+	unsigned int ret = -EINVAL;
+	
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);
+	if ((Lonoff == 1  && value < policy->max)|| (Lonoff == 0 && value < Lscreen_off_scaling_mhz))
+	{
+		new_policy.max = value;
+		ret = __cpufreq_set_policy(policy, &new_policy);	
+		policy->user_policy.max = policy->max;
+
+		pr_alert("SET_BATTERY_MAX_LEVEL: %u\n", value);
+	}
+	if (Lscreen_off_scaling_mhz_orig != 0)
+		return Lscreen_off_scaling_mhz_orig;		
+	else
+		return 1700000;		
+}
+
 void screen_on_off(struct work_struct *notification_off_work)
 {
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 	struct cpufreq_policy new_policy;
 	unsigned int ret = -EINVAL;
-
+	unsigned int mhz_lvl = 0;
+	
 	pr_alert("SET_SCREEN_ON_OFF_MHZ - %lx - so=%d - soo=%d\n", Lonoff, Lscreen_off_scaling_mhz, Lscreen_off_scaling_mhz_orig);
 
 	if (Lonoff == 0 && Lscreen_off_scaling_mhz > 0)
@@ -582,7 +706,11 @@ void screen_on_off(struct work_struct *notification_off_work)
 		if (Lscreen_off_scaling_mhz_orig != 0)
 			new_policy.max = Lscreen_off_scaling_mhz_orig;		
 		else
-			new_policy.max = 1700000;		
+			new_policy.max = 1700000;
+		mhz_lvl = get_batt_level();
+		if (mhz_lvl > 0)
+			new_policy.max = mhz_lvl;
+					
 		ret = __cpufreq_set_policy(policy, &new_policy);	
 		policy->user_policy.max = policy->max;
 	}
@@ -863,7 +991,6 @@ ssize_t store_GPU_mV_table(struct cpufreq_policy *policy,
 	return count;
 }
 
-extern unsigned int get_cur_gpu_freq();
 ssize_t show_scaling_cur_freq_gpu(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", get_cur_gpu_freq());
@@ -884,6 +1011,10 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_min_freq_gpu);
 cpufreq_freq_attr_rw(scaling_max_freq_gpu);
+cpufreq_freq_attr_rw(battery_ctrl_batt_lvl_low);
+cpufreq_freq_attr_rw(battery_ctrl_batt_lvl_high);
+cpufreq_freq_attr_rw(battery_ctrl_mhz_lvl_low);
+cpufreq_freq_attr_rw(battery_ctrl_mhz_lvl_high);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
@@ -902,6 +1033,10 @@ static struct attribute *default_attrs[] = {
 	&scaling_min_freq_gpu.attr,
 	&scaling_max_freq_gpu.attr,
 	&scaling_cur_freq_gpu.attr,
+	&battery_ctrl_batt_lvl_low.attr,
+	&battery_ctrl_batt_lvl_high.attr,
+	&battery_ctrl_mhz_lvl_low.attr,
+	&battery_ctrl_mhz_lvl_high.attr,
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
@@ -1773,12 +1908,6 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 		target_freq, relation);
 	if (cpu_online(policy->cpu) && cpufreq_driver->target)
 		retval = cpufreq_driver->target(policy, target_freq, relation);
-	if (likely(retval != -EINVAL)) {
-		if (target_freq == policy->max)
-			cpu_nonscaling(policy->cpu);
-		else
-			cpu_scaling(policy->cpu);
-	}
 
 	return retval;
 }

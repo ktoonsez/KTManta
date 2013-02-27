@@ -10,10 +10,6 @@ NAME = Saber-toothed Squirrel
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
-CKVERSION = -ck3
-CKNAME = BFS Powered
-EXTRAVERSION := $(EXTRAVERSION)$(CKVERSION)
-
 # Do not:
 # o  use make's built-in rules and variables
 #    (this increases performance and avoids hard-to-debug behaviour);
@@ -369,21 +365,11 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -Wall -Wundef -O3 -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-		   -fstrict-aliasing \
-		   -ffast-math \
-		   -fgraphite-identity \
-		   -floop-block \
-		   -floop-strip-mine \
-		   -ftree-loop-distribution \
-		   -ftree-loop-linear \
-		   -mtune=cortex-a15 \
-		   -marm \
-		   -mfpu=neon-vfpv4
+XX_MODULO  = -fmodulo-sched -fmodulo-sched-allow-regmoves
+
+KBUILD_CFLAGS   := -Wall -Wundef -O3 -Wstrict-prototypes -Wno-trigraphs -Wno-strict-aliasing \
+		   -mfpu=neon-vfpv4 \
+		   $(XX_MODULO)
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
