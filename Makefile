@@ -368,19 +368,6 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 XX_MODULO  = -fmodulo-sched -fmodulo-sched-allow-regmoves
 
 KBUILD_CFLAGS   := -Wall -Wundef -O3 -Wstrict-prototypes -Wno-trigraphs -Wno-strict-aliasing \
-		   -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-		   -fstrict-aliasing \
-		   -ffast-math \
-		   -fgraphite-identity \
-		   -floop-block \
-		   -floop-strip-mine \
-		   -ftree-loop-distribution \
-		   -ftree-loop-linear \
-		   -mtune=cortex-a15 \
-		   -marm \
 		   -mfpu=neon-vfpv4 \
 		   $(XX_MODULO)
 
