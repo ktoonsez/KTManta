@@ -41,6 +41,15 @@
 #define FAST_POLL               (1 * 60)
 #define SLOW_POLL               (10 * 60)
 
+unsigned int gbatt_lvl_low = 0;
+unsigned int gbatt_lvl_high = 0;
+unsigned int gmhz_lvl_low = 0;
+unsigned int gmhz_lvl_high = 0;
+unsigned int gbatt_soc = 0;
+
+extern unsigned int set_battery_max_level(unsigned int value);
+static unsigned int Lscreen_off_scaling_mhz_orig = 0;
+
 struct android_bat_data {
 	struct android_bat_platform_data *pdata;
 	struct android_bat_callbacks callbacks;
@@ -474,12 +483,41 @@ static void android_bat_monitor_set_alarm(struct android_bat_data *battery,
 		    ktime_add(battery->last_poll, ktime_set(seconds, 0)));
 }
 
+void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high)
+{
+	gbatt_lvl_low = batt_lvl_low;
+	gbatt_lvl_high = batt_lvl_high;
+	gmhz_lvl_low = mhz_lvl_low;
+	gmhz_lvl_high = mhz_lvl_high;
+}
+
+unsigned int get_batt_level()
+{
+	if (gbatt_lvl_low > 0 && gmhz_lvl_low > 0)
+	{
+		if (gbatt_soc <= gbatt_lvl_low)
+			return gmhz_lvl_low;
+			
+	}
+	if (gbatt_lvl_high > 0 && gmhz_lvl_high > 0)
+	{
+		if (gbatt_soc <= gbatt_lvl_high)
+			return gmhz_lvl_high;
+	}
+	if ((gbatt_lvl_low > 0 && gbatt_soc > gbatt_lvl_low) || (gmhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high))
+		return Lscreen_off_scaling_mhz_orig;
+	else
+		return 0;
+}
+
+
 static void android_bat_monitor_work(struct work_struct *work)
 {
 	struct android_bat_data *battery =
 		container_of(work, struct android_bat_data, monitor_work);
 	struct timespec cur_time;
-
+	unsigned int mhz_lvl = 0;
+	
 	wake_lock(&battery->monitor_wake_lock);
 	android_bat_update_data(battery);
 	mutex_lock(&android_bat_state_lock);
@@ -535,6 +573,14 @@ static void android_bat_monitor_work(struct work_struct *work)
 
 	android_bat_charging_timer(battery);
 	get_monotonic_boottime(&cur_time);
+	
+	gbatt_soc = battery->batt_soc;
+	//Check for battery level to see if we need to set new policy MAX
+	mhz_lvl = get_batt_level();
+	if (mhz_lvl > 0)
+		Lscreen_off_scaling_mhz_orig = set_battery_max_level(mhz_lvl);
+	
+
 	pr_info("battery: l=%d v=%d c=%d temp=%s%ld.%ld h=%d st=%d%s ct=%lu type=%s\n",
 		battery->batt_soc, battery->batt_vcell/1000,
 		battery->batt_current, battery->batt_temp < 0 ? "-" : "",
