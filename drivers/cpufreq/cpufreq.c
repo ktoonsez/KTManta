@@ -664,7 +664,7 @@ unsigned int set_battery_max_level(unsigned int value)
 	unsigned int ret = -EINVAL;
 	
 	ret = cpufreq_get_policy(&new_policy, policy->cpu);
-	if ((Lonoff == 1  && value < policy->max)|| (Lonoff == 0 && value < Lscreen_off_scaling_mhz))
+	if (policy->max != value && ((Lonoff == 1  && value < policy->max) || (Lonoff == 0 && value < Lscreen_off_scaling_mhz)))
 	{
 		new_policy.max = value;
 		ret = __cpufreq_set_policy(policy, &new_policy);	
