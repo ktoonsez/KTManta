@@ -43,11 +43,14 @@
 
 unsigned int gbatt_lvl_low = 0;
 unsigned int gbatt_lvl_high = 0;
-unsigned int gmhz_lvl_low = 0;
-unsigned int gmhz_lvl_high = 0;
+unsigned int gcpu_mhz_lvl_low = 0;
+unsigned int gcpu_mhz_lvl_high = 0;
+unsigned int ggpu_mhz_lvl_low = 0;
+unsigned int ggpu_mhz_lvl_high = 0;
+unsigned int ggpu_original = 0;
 unsigned int gbatt_soc = 0;
 
-extern unsigned int set_battery_max_level(unsigned int value);
+extern unsigned int set_battery_max_level(unsigned int cpu_mhz_lvl, unsigned int gpu_mhz_lvl);
 static unsigned int Lscreen_off_scaling_mhz_orig = 0;
 
 struct android_bat_data {
@@ -483,31 +486,73 @@ static void android_bat_monitor_set_alarm(struct android_bat_data *battery,
 		    ktime_add(battery->last_poll, ktime_set(seconds, 0)));
 }
 
-void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high)
+void set_gpu_original(unsigned int gpu_original)
+{
+	ggpu_original = gpu_original;
+}
+
+void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int cpu_mhz_lvl_low, unsigned int cpu_mhz_lvl_high, unsigned int gpu_mhz_lvl_low, unsigned int gpu_mhz_lvl_high)
 {
 	gbatt_lvl_low = batt_lvl_low;
 	gbatt_lvl_high = batt_lvl_high;
-	gmhz_lvl_low = mhz_lvl_low;
-	gmhz_lvl_high = mhz_lvl_high;
+	gcpu_mhz_lvl_low = cpu_mhz_lvl_low;
+	gcpu_mhz_lvl_high = cpu_mhz_lvl_high;
+	ggpu_mhz_lvl_low = gpu_mhz_lvl_low;
+	ggpu_mhz_lvl_high = gpu_mhz_lvl_high;
 }
 
-unsigned int get_batt_level()
+void get_batt_level(unsigned int* cpu_mhz_lvl, unsigned int* gpu_mhz_lvl)
 {
-	if (gbatt_lvl_low > 0 && gmhz_lvl_low > 0)
+	//CPU
+	if (gbatt_lvl_low > 0 && gcpu_mhz_lvl_low > 0)
 	{
 		if (gbatt_soc <= gbatt_lvl_low)
-			return gmhz_lvl_low;
+		{
+			*cpu_mhz_lvl = gcpu_mhz_lvl_low;
+			goto got_cpu_val;
+		}
 			
 	}
-	if (gbatt_lvl_high > 0 && gmhz_lvl_high > 0)
+	if (gbatt_lvl_high > 0 && gcpu_mhz_lvl_high > 0)
 	{
-		if (gbatt_soc <= gbatt_lvl_high)
-			return gmhz_lvl_high;
+		if (gbatt_soc <= gbatt_lvl_high && gbatt_soc > gbatt_lvl_low)
+		{
+			*cpu_mhz_lvl = gcpu_mhz_lvl_high;
+			goto got_cpu_val;
+		}
 	}
-	if ((gbatt_lvl_low > 0 && gbatt_soc > gbatt_lvl_low) || (gmhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high))
-		return Lscreen_off_scaling_mhz_orig;
+	if ((gbatt_lvl_low > 0 && gbatt_soc > gbatt_lvl_low) || (gcpu_mhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high))
+		*cpu_mhz_lvl = Lscreen_off_scaling_mhz_orig;
 	else
-		return 0;
+		*cpu_mhz_lvl = 0;
+
+got_cpu_val:
+
+	//GPU
+	if (gbatt_lvl_low > 0 && ggpu_mhz_lvl_low > 0)
+	{
+		if (gbatt_soc <= gbatt_lvl_low)
+		{
+			*gpu_mhz_lvl = ggpu_mhz_lvl_low;
+			goto got_gpu_val;
+		}
+			
+	}
+	if (gbatt_lvl_high > 0 && ggpu_mhz_lvl_high > 0)
+	{
+		if (gbatt_soc <= gbatt_lvl_high && gbatt_soc > gbatt_lvl_low)
+		{
+			*gpu_mhz_lvl = ggpu_mhz_lvl_high;
+			goto got_gpu_val;
+		}
+	}
+	if ((gbatt_lvl_low > 0 && gbatt_soc > gbatt_lvl_low) || (ggpu_mhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high))
+		*gpu_mhz_lvl = ggpu_original;
+	else
+		*gpu_mhz_lvl = 0;
+
+got_gpu_val:
+return;
 }
 
 
@@ -516,7 +561,8 @@ static void android_bat_monitor_work(struct work_struct *work)
 	struct android_bat_data *battery =
 		container_of(work, struct android_bat_data, monitor_work);
 	struct timespec cur_time;
-	unsigned int mhz_lvl = 0;
+	unsigned int cpu_mhz_lvl = 0;
+	unsigned int gpu_mhz_lvl = 0;
 	
 	wake_lock(&battery->monitor_wake_lock);
 	android_bat_update_data(battery);
@@ -576,9 +622,10 @@ static void android_bat_monitor_work(struct work_struct *work)
 	
 	gbatt_soc = battery->batt_soc;
 	//Check for battery level to see if we need to set new policy MAX
-	mhz_lvl = get_batt_level();
-	if (mhz_lvl > 0)
-		Lscreen_off_scaling_mhz_orig = set_battery_max_level(mhz_lvl);
+	get_batt_level(&cpu_mhz_lvl, &gpu_mhz_lvl);
+	//pr_alert("BATTERY_CHECK: %u-%u\n", cpu_mhz_lvl, gpu_mhz_lvl);
+	if (cpu_mhz_lvl > 0 || gpu_mhz_lvl > 0)
+		Lscreen_off_scaling_mhz_orig = set_battery_max_level(cpu_mhz_lvl, gpu_mhz_lvl);
 	
 
 	pr_info("battery: l=%d v=%d c=%d temp=%s%ld.%ld h=%d st=%d%s ct=%lu type=%s\n",
