@@ -34,6 +34,8 @@
 #include <mach/asv-exynos.h>
 static char scaling_sched_screen_off_sel[16];
 static char scaling_sched_screen_off_sel_prev[16];
+static char scaling_governor_screen_off_sel[16];
+static char scaling_governor_screen_off_sel_prev[16];
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -685,6 +687,19 @@ static ssize_t show_cpuinfo_cur_freq(struct cpufreq_policy *policy,
 	return sprintf(buf, "%u\n", cur_freq);
 }
 
+static ssize_t show_scaling_governor_screen_off(struct cpufreq_policy *policy, char *buf)
+{
+	return scnprintf(buf, 16, "%s\n",
+				scaling_governor_screen_off_sel);
+}
+
+static ssize_t store_scaling_governor_screen_off(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(buf, "%15s", scaling_governor_screen_off_sel);
+	return count;
+}
 
 static ssize_t show_scaling_sched_screen_off(struct cpufreq_policy *policy, char *buf)
 {
@@ -750,6 +765,41 @@ void set_cur_sched(const char *name)
 {
 	unsigned int ret = -EINVAL;
 	ret = sscanf(name, "%15s", scaling_sched_screen_off_sel_prev);
+}
+
+/**
+ * store_scaling_governor - store policy for the specified CPU
+ */
+static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	char	str_governor[16];
+	struct cpufreq_policy new_policy;
+
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);
+	if (ret)
+		return ret;
+
+	ret = sscanf(buf, "%15s", str_governor);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (cpufreq_parse_governor(str_governor, &new_policy.policy,
+						&new_policy.governor))
+		return -EINVAL;
+
+	/* Do not use cpufreq_set_policy here or the user_policy.max
+	   will be wrongly overridden */
+	ret = __cpufreq_set_policy(policy, &new_policy);
+
+	policy->user_policy.policy = policy->policy;
+	policy->user_policy.governor = policy->governor;
+
+	if (ret)
+		return ret;
+	else
+		return count;
 }
 
 void screen_on_off(struct work_struct *notification_off_work)
@@ -821,6 +871,32 @@ void screen_on_off(struct work_struct *notification_off_work)
 		else
 		{
 			pr_alert("cpufreq_gov_resume_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel_prev);
+		}
+	}
+
+	//Governor stuff
+	if (Lonoff == 0)
+	{
+		if (!cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL && scaling_governor_screen_off_sel[0] != '\0')
+		{
+			policy = cpufreq_cpu_get(0);
+			ret = sscanf(policy->governor->name, "%15s", scaling_governor_screen_off_sel_prev);
+			if (ret == 1)
+			{
+				store_scaling_governor(policy, scaling_governor_screen_off_sel, sizeof(scaling_governor_screen_off_sel));
+				pr_alert("cpufreq_gov_suspend_gov: %s\n", scaling_governor_screen_off_sel);
+			}
+			else
+				pr_alert("cpufreq_gov_suspend_gov_DENIED1: %s\n", scaling_governor_screen_off_sel);
+		}
+	}
+	else if (Lonoff == 1)
+	{
+		if (!cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
+		{
+			policy = cpufreq_cpu_get(0);
+			store_scaling_governor(policy, scaling_governor_screen_off_sel_prev, sizeof(scaling_governor_screen_off_sel_prev));
+			pr_alert("cpufreq_gov_resume_gov: %s\n", scaling_governor_screen_off_sel_prev);
 		}
 	}
 }
@@ -902,41 +978,6 @@ void set_bluetooth_state(unsigned int val)
 			policy->user_policy.max = policy->max;
 		bluetooth_overwrote_screen_off = false;
 	}
-}
-
-/**
- * store_scaling_governor - store policy for the specified CPU
- */
-static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
-					const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	char	str_governor[16];
-	struct cpufreq_policy new_policy;
-
-	ret = cpufreq_get_policy(&new_policy, policy->cpu);
-	if (ret)
-		return ret;
-
-	ret = sscanf(buf, "%15s", str_governor);
-	if (ret != 1)
-		return -EINVAL;
-
-	if (cpufreq_parse_governor(str_governor, &new_policy.policy,
-						&new_policy.governor))
-		return -EINVAL;
-
-	/* Do not use cpufreq_set_policy here or the user_policy.max
-	   will be wrongly overridden */
-	ret = __cpufreq_set_policy(policy, &new_policy);
-
-	policy->user_policy.policy = policy->policy;
-	policy->user_policy.governor = policy->governor;
-
-	if (ret)
-		return ret;
-	else
-		return count;
 }
 
 /**
@@ -1127,6 +1168,7 @@ cpufreq_freq_attr_rw(battery_ctrl_cpu_mhz_lvl_high);
 cpufreq_freq_attr_rw(battery_ctrl_gpu_mhz_lvl_low);
 cpufreq_freq_attr_rw(battery_ctrl_gpu_mhz_lvl_high);
 cpufreq_freq_attr_rw(scaling_governor);
+cpufreq_freq_attr_rw(scaling_governor_screen_off);
 cpufreq_freq_attr_rw(scaling_sched_screen_off);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
@@ -1154,6 +1196,7 @@ static struct attribute *default_attrs[] = {
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
+	&scaling_governor_screen_off.attr,
 	&scaling_sched_screen_off.attr,
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
