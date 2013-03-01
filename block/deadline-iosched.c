@@ -354,8 +354,8 @@ static void *deadline_init_queue(struct request_queue *q)
 	load_prev_screen_on = isload_prev_screen_on();
 	if (load_prev_screen_on == 2)
 	{
-		dd->fifo_expire[READ] = gsched_vars[0] / 10;
-		dd->fifo_expire[WRITE] = gsched_vars[1] / 10;
+		dd->fifo_expire[READ] = gsched_vars[0] / 5;
+		dd->fifo_expire[WRITE] = gsched_vars[1] / 5;
 		dd->writes_starved = gsched_vars[2];
 		dd->front_merges = gsched_vars[3];
 		dd->fifo_batch = gsched_vars[4];
@@ -369,8 +369,8 @@ static void *deadline_init_queue(struct request_queue *q)
 		dd->fifo_batch = fifo_batch;
 		if (load_prev_screen_on == 0)
 		{
-			gsched_vars[0] = dd->fifo_expire[READ] * 10;
-			gsched_vars[1] = dd->fifo_expire[WRITE] * 10;
+			gsched_vars[0] = dd->fifo_expire[READ] * 5;
+			gsched_vars[1] = dd->fifo_expire[WRITE] * 5;
 			gsched_vars[2] = dd->writes_starved;
 			gsched_vars[3] = dd->front_merges;
 			gsched_vars[4] = dd->fifo_batch;
