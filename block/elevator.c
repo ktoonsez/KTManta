@@ -43,7 +43,7 @@
 static DEFINE_SPINLOCK(elv_list_lock);
 static LIST_HEAD(elv_list);
 
-static struct request_queue *globalq[5];
+static struct request_queue *globalq[20];
 static unsigned int queue_size = 0;
 
 /*
@@ -227,7 +227,7 @@ int elevator_init(struct request_queue *q, char *name)
 
 	q->index = queue_size;
 	globalq[queue_size] = q;
-	pr_alert("ELEVATOR_INIT: %s-%d\n", q->elevator->type->elevator_name, queue_size);
+	//pr_alert("ELEVATOR_INIT: %s-%d\n", q->elevator->type->elevator_name, queue_size);
 	queue_size += 1;
 	return 0;
 }
@@ -997,7 +997,7 @@ int elevator_change_relay(const char *name, int screen_status)
 {
 	int i = 0;
 	load_prev_screen_on = screen_status;
-	pr_alert("CHANGE_SCHEDULER0-%d\n", load_prev_screen_on);
+	//pr_alert("CHANGE_SCHEDULER0-%d\n", load_prev_screen_on);
 	//for (i = 0; i < queue_size; i++)
 		elevator_change(globalq[i], name);
 	load_prev_screen_on = 0;
@@ -1033,9 +1033,9 @@ int elevator_change(struct request_queue *q, const char *name)
 		elevator_put(e);
 		return 0;
 	}
-	pr_alert("CHANGE_SCHEDULER1: %s-%s\n", name, q->elevator->type->elevator_name);
+	//pr_alert("CHANGE_SCHEDULER1: %s-%s\n", name, q->elevator->type->elevator_name);
 	ret = elevator_switch(q, e);
-	pr_alert("CHANGE_SCHEDULER2: %s-%s-%d\n", name, q->elevator->type->elevator_name, ret);
+	//pr_alert("CHANGE_SCHEDULER2: %s-%s-%d\n", name, q->elevator->type->elevator_name, ret);
 	
 	return ret;
 }
@@ -1051,7 +1051,7 @@ ssize_t elv_iosched_store(struct request_queue *q, const char *name,
 
 	ret = elevator_change(q, name);
 	globalq[q->index] = q;
-	pr_alert("IOSCHED_STORE: %s-%s-%s-%d\n", name, q->elevator->type->elevator_name, globalq[q->index]->elevator->type->elevator_name, q->index);
+	//pr_alert("IOSCHED_STORE: %s-%s-%s-%d\n", name, q->elevator->type->elevator_name, globalq[q->index]->elevator->type->elevator_name, q->index);
 	set_cur_sched(name);
 	if (!ret)
 		return count;
