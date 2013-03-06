@@ -50,8 +50,8 @@
 #define BOOT_VECTOR		S5P_VA_SYSRAM
 #endif
 
-static bool allow_coupled_idle = true;
-static bool allow_lpa = false;
+static bool allow_coupled_idle __read_mostly = true;
+static bool allow_lpa __read_mostly = false;
 module_param(allow_coupled_idle, bool, 0644);
 module_param(allow_lpa, bool, 0644);
 
@@ -221,16 +221,16 @@ static int __maybe_unused exynos_check_enter_mode(void)
 static struct cpuidle_state exynos_cpuidle_set[] __initdata = {
 	[0] = {
 		.enter			= exynos_enter_idle,
-		.exit_latency		= 10,
-		.target_residency	= 10,
+		.exit_latency		= 1,
+		.target_residency	= 5,
 		.flags			= CPUIDLE_FLAG_TIME_VALID,
 		.name			= "C0",
 		.desc			= "ARM clock gating(WFI)",
 	},
 	[1] = {
 		.enter			= exynos_enter_lowpower,
-		.exit_latency		= 5000,
-		.target_residency	= 10000,
+		.exit_latency		= 500,
+		.target_residency	= 1000,
 		.flags			= CPUIDLE_FLAG_TIME_VALID |
 					  CPUIDLE_FLAG_COUPLED,
 		.name			= "C1",
