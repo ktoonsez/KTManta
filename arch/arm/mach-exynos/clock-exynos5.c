@@ -2571,7 +2571,6 @@ static struct {
 	 * clock divider for ACLK_PR0X
 	 * clock divider for ACLK_PR1X
 	 */
-	INT_FREQ(333, 1, 1, 2, 1, 0, 0, 0, 1, 1, 5, 1, 0, 1, 1),
 	INT_FREQ(266, 1, 1, 3, 2, 0, 0, 0, 1, 1, 5, 1, 0, 1, 1),
 	INT_FREQ(200, 1, 2, 4, 3, 1, 0, 0, 3, 2, 5, 1, 0, 1, 1),
 	INT_FREQ(160, 1, 3, 4, 4, 2, 0, 0, 3, 3, 5, 1, 0, 1, 1),
