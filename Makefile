@@ -380,6 +380,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -O3 -Wstrict-prototypes -Wno-trigraphs -Wno-str
 		   -ftree-loop-distribution \
 		   -ftree-loop-linear \
 		   -mtune=cortex-a15 \
+		   -mcpu=cortex-a15 \
+		   -funsafe-math-optimizations -ftree-vectorize \
 		   -marm \
 		   -mfpu=neon-vfpv4 \
 		   $(XX_MODULO)
