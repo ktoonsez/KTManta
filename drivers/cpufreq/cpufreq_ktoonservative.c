@@ -397,7 +397,7 @@ static ssize_t store_boost_gpu(struct kobject *a, struct attribute *b,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (input != 100 && input != 160 && input != 266 && input != 350 && input != 400 && input != 450 && input != 533 && input != 612)
+	if (input != 100 && input != 160 && input != 266 && input != 350 && input != 400 && input != 450 && input != 533 && input != 612 && input != 667 && input != 720)
 		input = 0;
 
 	dbs_tuners_ins.boost_gpu = input;

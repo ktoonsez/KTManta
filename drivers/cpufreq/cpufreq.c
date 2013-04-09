@@ -645,7 +645,7 @@ static ssize_t store_battery_ctrl_gpu_mhz_lvl_low(struct cpufreq_policy *policy,
 	if (ret != 1)
 		return -EINVAL;
 	
-	if (input < 100 || input > 612)
+	if (input < 100 || input > FREQ_STEPS_GPU_MAX)
 		input = 0;
 	gpu_mhz_lvl_low = input;
 	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
@@ -668,7 +668,7 @@ static ssize_t store_battery_ctrl_gpu_mhz_lvl_high(struct cpufreq_policy *policy
 	if (ret != 1)
 		return -EINVAL;
 	
-	if (input < 100 || input > 612)
+	if (input < 100 || input > FREQ_STEPS_GPU_MAX)
 		input = 0;
 	gpu_mhz_lvl_high = input;
 	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
@@ -1132,7 +1132,7 @@ ssize_t store_GPU_mV_table(struct cpufreq_policy *policy,
 {
 	unsigned int ret = -EINVAL;
 	int u[FREQ_STEPS_GPU];
-	ret = sscanf(buf, "%d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7]);
+	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9]);
 	if(ret != FREQ_STEPS_GPU) {
 		return -EINVAL;
 	}

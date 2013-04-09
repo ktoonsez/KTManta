@@ -90,7 +90,9 @@ static mali_dvfs_info mali_dvfs_infotbl[] = {
 	{1125000, 400, 70, 80, 0, 800000},
 	{1150000, 450, 76, 99, 0, 800000},
 	{1200000, 533, 99, 100, 0, 800000},
-	{1200000, 612, 99, 100, 0, 800000},
+	{1200000, 612, 99, 100, 0, 864000},
+	{1250000, 667, 99, 100, 0, 864000},
+	{1300000, 720, 99, 100, 0, 864000},
 };
 static mali_dvfs_info mali_dvfs_infotbl_static[] = {
 	{925000, 100, 0, 70, 0, 100000},
@@ -99,13 +101,15 @@ static mali_dvfs_info mali_dvfs_infotbl_static[] = {
 	{1075000, 350, 70, 80, 0, 400000},
 	{1125000, 400, 70, 80, 0, 667000},
 	{1150000, 450, 70, 80, 0, 800000},
-	{1200000, 533, 76, 99, 0, 800000},
-	{1200000, 612, 99, 100, 0, 800000},
+	{1200000, 533, 70, 80, 0, 800000},
+	{1200000, 612, 70, 80, 0, 864000},
+	{1250000, 667, 76, 99, 0, 864000},
+	{1300000, 720, 99, 100, 0, 864000},
 };
 
 #define MALI_DVFS_STEP	ARRAY_SIZE(mali_dvfs_infotbl)
 unsigned int dvfs_step_min = 0;
-unsigned int dvfs_step_max = 7;
+unsigned int dvfs_step_max = 9;
 unsigned int dvfs_step_max_minus1 = 450;
 unsigned int cur_gpu_freq = 0;
 static bool lock_out_changes = false;
@@ -140,7 +144,7 @@ static void update_time_in_state(int level);
 static mali_dvfs_status mali_dvfs_status_current;
 #ifdef MALI_DVFS_ASV_ENABLE
 static const unsigned int mali_dvfs_vol_default[]=
-	{ 925000, 925000, 1025000, 1075000, 1125000, 1150000, 1200000, 1200000};
+	{ 925000, 925000, 1025000, 1075000, 1125000, 1150000, 1200000, 1200000, 1250000, 1300000};
 
 void hlpr_set_volt_tablee_G3D(unsigned int i, unsigned int val)
 {
@@ -706,6 +710,14 @@ void kbase_platform_dvfs_set_clock(kbase_device *kbdev, int freq)
 		return;
 
 	switch(freq) {
+		case 720:
+			gpll_rate = 720000000;
+			aclk_400_rate = 720000000;
+			break;
+		case 667:
+			gpll_rate = 667000000;
+			aclk_400_rate = 667000000;
+			break;
 		case 612:
 			gpll_rate = 612000000;
 			aclk_400_rate = 612000000;
@@ -798,7 +810,7 @@ int kbase_platform_dvfs_get_level(int freq)
 	return -1;
 }
 
-unsigned int get_cur_gpu_freq()
+unsigned int get_cur_gpu_freq(void)
 {
 	//mali_dvfs_status *dvfs_status;
 	//dvfs_status = &mali_dvfs_status_current;
