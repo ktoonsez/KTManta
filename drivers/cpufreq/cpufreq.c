@@ -97,6 +97,9 @@ extern void set_gpu_original(unsigned int gpu_original);
 extern void get_batt_level(unsigned int* cpu_mhz_lvl, unsigned int* gpu_mhz_lvl);
 extern unsigned int get_cur_gpu_freq();
 
+extern ssize_t hlpr_get_gpu_gov_table(char *buf);
+extern void hlpr_set_gpu_gov_table(int gpu_table[]);
+
 #define lock_policy_rwsem(mode, cpu)					\
 int lock_policy_rwsem_##mode					\
 (int cpu)								\
@@ -1141,6 +1144,21 @@ ssize_t store_GPU_mV_table(struct cpufreq_policy *policy,
 	return count;
 }
 
+ssize_t show_GPU_gov_table(struct cpufreq_policy *policy, char *buf)
+{
+	return hlpr_get_gpu_gov_table(buf);
+}
+
+ssize_t store_GPU_gov_table(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	int u[FREQ_STEPS_GPU];
+	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9]);
+
+	hlpr_set_gpu_gov_table(u);
+	return count;
+}
+
 ssize_t show_scaling_cur_freq_gpu(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", get_cur_gpu_freq());
@@ -1176,6 +1194,7 @@ cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_ro(UV_mV_table_stock);
 cpufreq_freq_attr_rw(GPU_mV_table);
 cpufreq_freq_attr_ro(GPU_mV_table_stock);
+cpufreq_freq_attr_rw(GPU_gov_table);
 cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
 
 static struct attribute *default_attrs[] = {
@@ -1205,6 +1224,7 @@ static struct attribute *default_attrs[] = {
 	&UV_mV_table_stock.attr,
 	&GPU_mV_table.attr,
 	&GPU_mV_table_stock.attr,
+	&GPU_gov_table.attr,
 	&screen_off_scaling_mhz.attr,
 	&bluetooth_scaling_mhz.attr,
 	NULL
