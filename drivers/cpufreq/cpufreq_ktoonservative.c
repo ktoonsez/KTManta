@@ -262,7 +262,8 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 
 	if (ret != 1)
 		return -EINVAL;
-
+	boostpulse_relayf = false;
+	boostpulse_relay_sr = 0;
 	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
 	return count;
 }
@@ -722,7 +723,7 @@ void screen_is_on_relay_kt(bool state)
 	
 }
 
-void boostpulse_relay_kt()
+void boostpulse_relay_kt(void)
 {
 	if (!boostpulse_relayf)
 	{
