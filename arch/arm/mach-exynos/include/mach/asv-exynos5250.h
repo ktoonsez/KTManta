@@ -17,7 +17,7 @@
 #define ARM_ASV_GRP_NR			12
 #define INT_DVFS_LEVEL_NR		6
 #define INT_ASV_GRP_NR			12
-#define MIF_DVFS_LEVEL_NR		9
+#define MIF_DVFS_LEVEL_NR		10
 #define MIF_ASV_GRP_NR			4
 #define G3D_DVFS_LEVEL_NR		FREQ_STEPS_GPU
 #define G3D_ASV_GRP_NR			12
@@ -97,6 +97,7 @@ static unsigned int mif_refer_table_get_asv[2][MAX_ASV_GRP_NR] = {
 };
 
 static unsigned int mif_asv_volt_info[MIF_DVFS_LEVEL_NR][MAX_ASV_GRP_NR + 1] = {
+	{ 912000, 1225000, 1162500, 1137500, 1087500, 0, 0, 0, 0, 0, 0, 0, 0},
 	{ 864000, 1175000, 1112500, 1087500, 1037500, 0, 0, 0, 0, 0, 0, 0, 0},
 	{ 800000, 1125000, 1062500, 1037500,  987500, 0, 0, 0, 0, 0, 0, 0, 0},
 	{ 733000, 1075000, 1012500,  987500,  937500, 0, 0, 0, 0, 0, 0, 0, 0},

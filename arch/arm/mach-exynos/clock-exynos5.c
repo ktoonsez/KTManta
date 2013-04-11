@@ -2268,6 +2268,7 @@ static struct {
 static u32 exynos5_gpll_div[][6] = {
 	/*rate, P, M, S, AFC_DNB, AFC*/
 	{1400000000, 3, 175, 0, 0, 0}, /* for 466MHz */
+	{912000000, 3, 114, 0, 0, 0},  /* for 912MHz */
 	{864000000, 3, 108, 0, 0, 0},  /* for 864MHz */
 	{800000000, 3, 100, 0, 0, 0},  /* for 400MHz, 200MHz */
 	{720000000, 4, 240, 1, 0, 0},  /* for 720MHz */
@@ -2451,6 +2452,7 @@ static struct {
 	 *		MCLK_DPHY, ACLK_SFRTZASCP, MCLK_CDREX2
 	 * clock divider for ACLK_SYSLFT, PCLK_SYSLFT
 	 */
+	MIF_FREQ(912, 1, 1, 1, 2, 0, 1, 0, 1, 1),
         MIF_FREQ(864, 1, 1, 1, 2, 0, 1, 0, 1, 1),
 	MIF_FREQ(800, 1, 1, 1, 2, 0, 1, 0, 1, 1),
 	MIF_FREQ(720, 1, 1, 1, 2, 0, 1, 0, 1, 1),
