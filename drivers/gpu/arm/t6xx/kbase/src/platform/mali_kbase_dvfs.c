@@ -84,12 +84,12 @@ typedef struct _mali_dvfs_info{
 
 static mali_dvfs_info mali_dvfs_infotbl[] = {
 	{925000, 100, 0, 40, 0, 100000},
-	{925000, 160, 40, 50, 0, 160000},
-	{1025000, 266, 50, 60, 0, 400000},
-	{1075000, 350, 60, 70, 0, 400000},
-	{1125000, 400, 70, 80, 0, 800000},
-	{1150000, 450, 80, 90, 0, 800000},
-	{1200000, 533, 90, 100, 0, 800000},
+	{925000, 160, 39, 50, 0, 160000},
+	{1025000, 266, 49, 60, 0, 400000},
+	{1075000, 350, 59, 70, 0, 400000},
+	{1125000, 400, 69, 80, 0, 800000},
+	{1150000, 450, 79, 90, 0, 800000},
+	{1200000, 533, 89, 100, 0, 800000},
 	{1200000, 612, 99, 100, 0, 800000},
 	{1250000, 667, 99, 100, 0, 800000},
 	{1300000, 720, 99, 100, 0, 800000},
@@ -155,16 +155,24 @@ void hlpr_set_gpu_gov_table(int gpu_table[])
 {
 	int i;
 	int u = 0;
+	boost_hold_cycles_cnt = 0;
+	boost_hold_cycles = 0;
+	lock_out_changes = false;
+	boost_utilisation = 0;
 	for (i = dvfs_step_max-1; i >= dvfs_step_min && i >= 0; i--)
 	{
 		mali_dvfs_infotbl[i].max_threshold = gpu_table[u];
-		if (i == dvfs_step_max-1)
+		if (i == dvfs_step_min)
 			mali_dvfs_infotbl[i].min_threshold = 0;
 		else
-			mali_dvfs_infotbl[i].min_threshold = gpu_table[u+1];
-		pr_alert("SET GPU GOV TABLE %d - %d - %d", i, mali_dvfs_infotbl[i].clock, mali_dvfs_infotbl[i].max_threshold);			
+			mali_dvfs_infotbl[i].min_threshold = gpu_table[u+1]-1;
+		pr_alert("SET GPU GOV TABLE %d - %d - %d - %d", i, mali_dvfs_infotbl[i].clock, mali_dvfs_infotbl[i].min_threshold, mali_dvfs_infotbl[i].max_threshold);			
 		u++;
 	}
+	boost_hold_cycles_cnt = 0;
+	boost_hold_cycles = 0;
+	lock_out_changes = false;
+	boost_utilisation = 0;
 }
 
 ssize_t hlpr_get_gpu_gov_mif_table(char *buf)
@@ -183,12 +191,20 @@ void hlpr_set_gpu_gov_mif_table(int gpu_table[])
 {
 	int i;
 	int u = 0;
+	boost_hold_cycles_cnt = 0;
+	boost_hold_cycles = 0;
+	lock_out_changes = false;
+	boost_utilisation = 0;
 	for (i = dvfs_step_max-1; i >= dvfs_step_min && i >= 0; i--)
 	{
 		mali_dvfs_infotbl[i].mem_freq = gpu_table[u] * 1000;
 		pr_alert("SET GPU GOV MIF TABLE %d - %d - %d", i, mali_dvfs_infotbl[i].clock, mali_dvfs_infotbl[i].mem_freq * 1000);
 		u++;
 	}
+	boost_hold_cycles_cnt = 0;
+	boost_hold_cycles = 0;
+	lock_out_changes = false;
+	boost_utilisation = 0;
 }
 
 void hlpr_set_min_max_G3D(unsigned int min, unsigned int max)
