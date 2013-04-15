@@ -651,7 +651,6 @@ static void *row_init_queue(struct request_queue *q)
 		return NULL;
 
 	load_prev_screen_on = isload_prev_screen_on();
-	memset(rdata, 0, sizeof(*rdata));
 	for (i = 0; i < ROWQ_MAX_PRIO; i++) {
 		INIT_LIST_HEAD(&rdata->row_queues[i].fifo);
 		if (load_prev_screen_on == 2)
@@ -699,6 +698,9 @@ static void *row_init_queue(struct request_queue *q)
 
 	rdata->rd_idle_data.idling_queue_idx = ROWQ_MAX_PRIO;
 	rdata->dispatch_queue = q;
+
+	rdata->nr_urgent_in_flight = 0;
+	rdata->nr_reqs[READ] = rdata->nr_reqs[WRITE] = 0;
 
 	return rdata;
 }
