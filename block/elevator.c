@@ -229,6 +229,8 @@ int elevator_init(struct request_queue *q, char *name)
 	globalq[queue_size] = q;
 	//pr_alert("ELEVATOR_INIT: %s-%d\n", q->elevator->type->elevator_name, queue_size);
 	queue_size += 1;
+	if (queue_size >= 19)
+		queue_size = 10;
 	return 0;
 }
 EXPORT_SYMBOL(elevator_init);
