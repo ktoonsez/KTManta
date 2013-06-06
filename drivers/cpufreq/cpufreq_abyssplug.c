@@ -635,7 +635,7 @@ static inline void dbs_timer_init(struct cpu_dbs_info_s *dbs_info)
 	int delay = usecs_to_jiffies(dbs_tuners_ins.sampling_rate);
 	delay -= jiffies % delay;
 
-	INIT_DELAYED_WORK_DEFERRABLE(&dbs_info->work, do_dbs_timer);
+	INIT_DEFERRABLE_WORK(&dbs_info->work, do_dbs_timer);
 	INIT_WORK(&dbs_info->cpu_up_work, do_cpu_up);
 	INIT_WORK(&dbs_info->cpu_down_work, do_cpu_down);
 	if (!dbs_info->boost_applied)
