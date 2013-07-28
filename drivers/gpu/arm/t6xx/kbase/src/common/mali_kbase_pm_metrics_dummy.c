@@ -1,6 +1,6 @@
 /*
  *
- * (C) COPYRIGHT 2011 ARM Limited. All rights reserved.
+ * (C) COPYRIGHT 2011-2012 ARM Limited. All rights reserved.
  *
  * This program is free software and is provided to you under the terms of the GNU General Public License version 2
  * as published by the Free Software Foundation, and any use by you of this program is subject to the terms of such GNU licence.
@@ -22,7 +22,7 @@
 
 void kbase_pm_register_vsync_callback(kbase_device *kbdev)
 {
-	OSK_ASSERT(kbdev != NULL);
+	KBASE_DEBUG_ASSERT(kbdev != NULL);
 
 	/* no VSync metrics will be available */
 	kbdev->pm.metrics.platform_data = NULL;
@@ -30,5 +30,5 @@ void kbase_pm_register_vsync_callback(kbase_device *kbdev)
 
 void kbase_pm_unregister_vsync_callback(kbase_device *kbdev)
 {
-	OSK_ASSERT(kbdev != NULL);
+	KBASE_DEBUG_ASSERT(kbdev != NULL);
 }

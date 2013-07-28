@@ -2,7 +2,7 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_MANTA
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_MANTA_M2
 export PACKAGEDIR=$PARENT_DIR/Packages/AOSP_Manta
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
