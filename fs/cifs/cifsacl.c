@@ -232,6 +232,13 @@ cifs_copy_sid(struct cifs_sid *dst, const struct cifs_sid *src)
 }
 
 static void
+cifs_copy_sid(struct cifs_sid *dst, const struct cifs_sid *src)
+{
+	memcpy(dst, src, sizeof(*dst));
+	dst->num_subauth = min_t(u8, src->num_subauth, NUM_SUBAUTHS);
+}
+
+static void
 id_rb_insert(struct rb_root *root, struct cifs_sid *sidptr,
 		struct cifs_sid_id **psidid, char *typestr)
 {

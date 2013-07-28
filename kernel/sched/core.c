@@ -72,6 +72,7 @@
 #include <linux/slab.h>
 #include <linux/init_task.h>
 #include <linux/binfmts.h>
+#include <linux/watchdog.h>  /* for touch_hw_watchdog() */
 
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
@@ -2557,6 +2558,10 @@ static void calc_load_account_active(struct rq *this_rq)
  */
 
 /*
+ * End of global load-average stuff
+ */
+
+/*
  * The exact cpuload at various idx values, calculated at every tick would be
  * load = (2^idx - 1) / 2^idx * load + 1 / 2^idx * cur_load
  *
@@ -5020,13 +5025,15 @@ void show_state_filter(unsigned long state_filter)
 #endif
 	rcu_read_lock();
 	do_each_thread(g, p) {
-		/*
-		 * reset the NMI-timeout, listing all files on a slow
-		 * console might take a lot of time:
-		 */
-		touch_nmi_watchdog();
-		if (!state_filter || (p->state & state_filter))
+		if (!state_filter || (p->state & state_filter)) {
+			/*
+			 * reset the NMI-timeout, listing all files on a slow
+			 * console might take a lot of time:
+			 */
+			touch_nmi_watchdog();
+			touch_hw_watchdog();
 			sched_show_task(p);
+		}
 	} while_each_thread(g, p);
 
 	touch_all_softlockup_watchdogs();
@@ -7534,6 +7541,12 @@ void sched_move_task(struct task_struct *tsk)
 		dequeue_task(rq, tsk, 0);
 	if (unlikely(running))
 		tsk->sched_class->put_prev_task(rq, tsk);
+
+	tg = container_of(task_subsys_state_check(tsk, cpu_cgroup_subsys_id,
+				lockdep_is_held(&tsk->sighand->siglock)),
+			  struct task_group, css);
+	tg = autogroup_task_group(tsk, tg);
+	tsk->sched_task_group = tg;
 
 	tg = container_of(task_subsys_state_check(tsk, cpu_cgroup_subsys_id,
 				lockdep_is_held(&tsk->sighand->siglock)),

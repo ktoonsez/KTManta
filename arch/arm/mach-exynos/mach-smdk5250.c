@@ -919,8 +919,7 @@ static struct dw_mci_board exynos_dwmci0_pdata __initdata = {
 	.max_bus_hz		= 200 * 1000 * 1000,
 	.caps			= MMC_CAP_UHS_DDR50 | MMC_CAP_1_8V_DDR |
 				  MMC_CAP_8_BIT_DATA | MMC_CAP_CMD23,
-	.caps2			= MMC_CAP2_HS200_1_8V_SDR | MMC_CAP2_PACKED_WR,
-	.desc_sz		= 4,
+	.caps2			= MMC_CAP2_HS200_1_8V_SDR,
 	.fifo_depth             = 0x80,
 	.detect_delay_ms	= 200,
 	.hclk_name		= "dwmci",
@@ -1008,7 +1007,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win0 = {
 	.width			= 223,
 	.height			= 125,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 
 static struct s3c_fb_pd_win smdk5250_fb_win1 = {
@@ -1027,7 +1026,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win1 = {
 	.width			= 223,
 	.height			= 125,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 
 static struct s3c_fb_pd_win smdk5250_fb_win2 = {
@@ -1046,7 +1045,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win2 = {
 	.width			= 223,
 	.height			= 125,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 #elif defined(CONFIG_LCD_MIPI_TC358764)
 static void mipi_lcd_set_power(struct plat_lcd_data *pd,
@@ -1124,7 +1123,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win0 = {
 	.width			= 223,
 	.height			= 125,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 
 static struct s3c_fb_pd_win smdk5250_fb_win1 = {
@@ -1143,7 +1142,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win1 = {
 	.width			= 223,
 	.height			= 125,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 static struct s3c_fb_pd_win smdk5250_fb_win2 = {
 	.win_mode = {
@@ -1161,7 +1160,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win2 = {
 	.width			= 223,
 	.height			= 125,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 #elif defined(CONFIG_S5P_DP)
 static void s5p_dp_backlight_on(void);
@@ -1260,7 +1259,7 @@ static struct s3c_fb_pd_win smdk5250_fb_win2 = {
 	.virtual_x		= 2560,
 	.virtual_y		= 1600 * 2,
 	.max_bpp		= 32,
-	.default_bpp		= 32,
+	.default_bpp		= 24,
 };
 #endif
 
@@ -1419,9 +1418,9 @@ static struct video_info smdk5250_dp_config = {
 	.interlaced		= 0,
 
 	.color_space		= COLOR_RGB,
-	.dynamic_range		= CEA,
-	.ycbcr_coeff		= COLOR_YCBCR709,
-	.color_depth		= COLOR_10,
+	.dynamic_range		= VESA,
+	.ycbcr_coeff		= COLOR_YCBCR601,
+	.color_depth		= COLOR_8,
 
 	.link_rate		= LINK_RATE_2_70GBPS,
 	.lane_count		= LANE_COUNT4,

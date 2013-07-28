@@ -201,20 +201,6 @@ config BATTERY_MAX17042
 	  multi-function devices that include fuel gauages that are compatible
 	  with MAX17042.
 
-config FUELGAUGE_MAX17047
-	tristate "Maxim MAX17047 Fuel Gauge"
-	depends on I2C
-	help
-	  Say Y to enable MAX17047 fuel-gauge systems
-	  for lithium-ion (Li+) batteries
-	  in handheld and portable equipment. The MAX17047 is configured
-	  to operate with a single lithium cell.
-
-config CHARGER_BQ24191
-	tristate "BQ24191 charger driver"
-	help
-	 Say Y to include support for TI BQ24191 battery charger driver.
-
 config BATTERY_ANDROID
 	tristate "Battery driver for Android"
 	help
