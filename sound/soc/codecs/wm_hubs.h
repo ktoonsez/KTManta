@@ -46,8 +46,6 @@ struct wm_hubs_data {
 
 	bool dcs_done_irq;
 	struct completion dcs_done;
-
-	struct snd_soc_codec *codec;
 };
 
 extern int wm_hubs_add_analogue_controls(struct snd_soc_codec *);

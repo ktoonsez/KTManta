@@ -17,7 +17,7 @@
 
 
 struct ion_platform_data exynos_ion_pdata = {
-	.nr = 4,
+	.nr = 3,
 	.heaps = {
 		{	.type = ION_HEAP_TYPE_SYSTEM,
 			.name = "ion_noncontig_heap",
@@ -30,13 +30,6 @@ struct ion_platform_data exynos_ion_pdata = {
 		{	.type = ION_HEAP_TYPE_EXYNOS_CONTIG,
 			.name = "exynos_contig_heap",
 			.id = EXYNOS_ION_HEAP_EXYNOS_CONTIG_ID,
-		},
-		{	.type = ION_HEAP_TYPE_CHUNK,
-			.name = "ion_chunk_heap",
-			.id = EXYNOS_ION_HEAP_CHUNK_ID,
-			.size = SZ_256M,
-			.align = SZ_1M,
-			.priv = (void *)SZ_1M,
 		},
 	}
 };

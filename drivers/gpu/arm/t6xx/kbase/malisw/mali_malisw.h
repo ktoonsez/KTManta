@@ -15,6 +15,9 @@
 #ifndef _MALISW_H_
 #define _MALISW_H_
 
+#define MALI_MODULE_MALISW_MAJOR 2
+#define MALI_MODULE_MALISW_MINOR 4
+
 /**
  * @file mali_malisw.h
  * Driver-wide include for common macros and types.
@@ -28,6 +31,7 @@
 #include <stddef.h>
 
 #include "mali_stdtypes.h"
+#include "mali_version_macros.h"
 
 /** @brief Gets the container object when given a pointer to a member of an object. */
 #define CONTAINER_OF(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type,member)))

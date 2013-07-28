@@ -39,4 +39,5 @@
  */
 #define STREAM_IOC_FENCE_INSERT _IO(STREAM_IOC_MAGIC, 0)
 
-#endif				/* _BASE_KERNEL_SYNC_H_ */
+#endif /* _BASE_KERNEL_SYNC_H_ */
+
