@@ -304,13 +304,13 @@ static void mali_dvfs_event_proc(struct work_struct *w)
 		if (dvfs_status->step==kbase_platform_dvfs_get_level(dvfs_step_max_minus1)) {
 			if (platform->utilisation > mali_dvfs_infotbl[dvfs_status->step].max_threshold)
 				dvfs_status->step++;
-			BUG_ON(dvfs_status->step >= dvfs_step_max);
+			BUG_ON(dvfs_status->step >= MALI_DVFS_STEP);
 		} else {
 			dvfs_status->step++;
-			BUG_ON(dvfs_status->step >= dvfs_step_max);
+			BUG_ON(dvfs_status->step >= MALI_DVFS_STEP);
 		}
 	} else if ((dvfs_status->step > 0) && (platform->time_tick == MALI_DVFS_TIME_INTERVAL) && (platform->utilisation < mali_dvfs_infotbl[dvfs_status->step].min_threshold)) {
-		BUG_ON(dvfs_status->step <= dvfs_step_min);
+		BUG_ON(dvfs_status->step <= 0);
 		dvfs_status->step--;
 	}
 #ifdef CONFIG_MALI_T6XX_FREQ_LOCK
@@ -362,10 +362,20 @@ int kbase_platform_dvfs_event(struct kbase_device *kbdev, u32 utilisation)
 		if (boost_hold_cycles_cnt >= boost_hold_cycles)
 		{
 			boost_hold_cycles_cnt = 0;
+			boost_hold_cycles = 0;
+			boost_utilisation = 0;
+			platform->time_tick = 0;
+			platform->time_busy = 0;
+			platform->time_idle = 0;
+			platform->utilisation = 0;
+			mali_dvfs_status_current.utilisation = 0;
 			lock_out_changes = false;
 		}
-		platform->utilisation = boost_utilisation;
-		mali_dvfs_status_current.utilisation = boost_utilisation;
+		else
+		{
+			platform->utilisation = boost_utilisation;
+			mali_dvfs_status_current.utilisation = boost_utilisation;
+		}
 	}
 	else
 	{

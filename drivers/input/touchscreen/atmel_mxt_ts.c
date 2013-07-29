@@ -229,9 +229,9 @@ extern void set_screen_on_off_mhz(unsigned long onoff);
 static bool ktoonservative_is_activef = false;
 static bool pegasusq_is_activef = false;
 static bool ondemand_is_activef = false;
-extern void boostpulse_relay_kt();
-extern void boostpulse_relay_pq();
-extern void boostpulse_relay_od();
+extern void boostpulse_relay_kt(void);
+extern void boostpulse_relay_pq(void);
+extern void boostpulse_relay_od(void);
 extern void screen_is_on_relay_kt(bool state);
 
 void ktoonservative_is_active(bool val)
