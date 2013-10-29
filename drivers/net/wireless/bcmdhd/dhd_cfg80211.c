@@ -292,7 +292,7 @@ static bool btcoex_is_sco_active(struct net_device *dev)
 			break;
 		}
 
-		msleep(5);
+		OSL_SLEEP(5);
 	}
 
 	return res;
@@ -581,19 +581,14 @@ int wl_cfg80211_set_btcoex_dhcp(struct net_device *dev, char *command)
 	if (strnicmp((char *)&powermode_val, "1", strlen("1")) == 0) {
 		WL_TRACE_HW4(("DHCP session starts\n"));
 
-#if defined(DHCP_SCAN_SUPPRESS)
-		/* Suppress scan during the DHCP */
-		wl_cfg80211_scan_suppress(dev, 1);
-#endif
 
 #ifdef PKT_FILTER_SUPPORT
 		dhd->dhcp_in_progress = 1;
 
-		/* Disable packet filtering */
-		//if (dhd->early_suspended) {
+		if (dhd->early_suspended) {
 			WL_TRACE_HW4(("DHCP in progressing , disable packet filter!!!\n"));
 			dhd_enable_packet_filter(0, dhd);
-		//}
+		}
 #endif
 
 		/* Retrieve and saved orig regs value */
@@ -639,20 +634,16 @@ int wl_cfg80211_set_btcoex_dhcp(struct net_device *dev, char *command)
 	else if (strnicmp((char *)&powermode_val, "2", strlen("2")) == 0) {
 
 
-#if defined(DHCP_SCAN_SUPPRESS)
-		/* Since DHCP is complete, enable the scan back */
-		wl_cfg80211_scan_suppress(dev, 0);
-#endif /* OEM_ANDROID */
 
 #ifdef PKT_FILTER_SUPPORT
 		dhd->dhcp_in_progress = 0;
 		WL_TRACE_HW4(("DHCP is complete \n"));
 
 		/* Enable packet filtering */
-		//if (dhd->early_suspended) {
+		if (dhd->early_suspended) {
 			WL_TRACE_HW4(("DHCP is complete , enable packet filter!!!\n"));
 			dhd_enable_packet_filter(1, dhd);
-		//}
+		}
 #endif /* PKT_FILTER_SUPPORT */
 
 		/* Restoring PM mode */
