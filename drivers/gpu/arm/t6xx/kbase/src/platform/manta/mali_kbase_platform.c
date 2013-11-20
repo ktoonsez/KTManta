@@ -219,9 +219,6 @@ int kbase_platform_cmu_pmu_control(struct kbase_device *kbdev, int control)
 
 	spin_lock_irqsave(&platform->cmu_pmu_lock, flags);
 
-#ifdef CONFIG_MALI_GATOR_SUPPORT
-	kbase_trace_mali_timeline_event(GATOR_MAKE_EVENT(ACTIVITY_RTPM_CHANGED, ACTIVITY_RTPM) | control);
-#endif
 	/* off */
 	if (control == 0) {
 		if (platform->cmu_pmu_status == 0) {
@@ -705,8 +702,10 @@ static ssize_t show_dvfs(struct device *dev, struct device_attribute *attr, char
 
 static ssize_t set_dvfs(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
-	struct kbase_device *kbdev;
-	kbdev = dev_get_drvdata(dev);
+	struct kbase_device *kbdev = dev_get_drvdata(dev);
+#ifdef CONFIG_MALI_T6XX_DVFS
+	struct exynos_context *platform;
+#endif
 
 	if (!kbdev)
 		return -ENODEV;
@@ -714,8 +713,10 @@ static ssize_t set_dvfs(struct device *dev, struct device_attribute *attr, const
 #ifdef CONFIG_MALI_T6XX_DVFS
 	/*if (sysfs_streq("off", buf)) {
 		kbase_platform_dvfs_enable(false, MALI_DVFS_BL_CONFIG_FREQ);
+		platform->dvfs_enabled = false;
 	} else if (sysfs_streq("on", buf)) {
 		kbase_platform_dvfs_enable(true, MALI_DVFS_START_FREQ);
+		platform->dvfs_enabled = true;
 	} else {
 		printk(KERN_DEBUG "invalid val -only [on, off] is accepted\n");
 	}*/
@@ -730,7 +731,7 @@ static ssize_t show_upper_lock_dvfs(struct device *dev, struct device_attribute 
 	struct kbase_device *kbdev;
 	ssize_t ret = 0;
 #ifdef CONFIG_MALI_T6XX_DVFS
-	unsigned int locked_level = -1;
+	int locked_level = -1;
 #endif
 
 	kbdev = dev_get_drvdata(dev);
@@ -809,7 +810,7 @@ static ssize_t show_under_lock_dvfs(struct device *dev, struct device_attribute 
 	struct kbase_device *kbdev;
 	ssize_t ret = 0;
 #ifdef CONFIG_MALI_T6XX_DVFS
-	unsigned int locked_level = -1;
+	int locked_level = -1;
 #endif
 
 	kbdev = dev_get_drvdata(dev);
@@ -1014,6 +1015,7 @@ mali_error kbase_platform_init(struct kbase_device *kbdev)
 	platform->time_busy = 0;
 	platform->time_idle = 0;
 	platform->time_tick = 0;
+	platform->dvfs_enabled = true;
 #endif
 
 	spin_lock_init(&platform->cmu_pmu_lock);
