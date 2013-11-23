@@ -35,6 +35,7 @@
 
 #include <plat/gpio-cfg.h>
 #include "board-manta.h"
+#include <linux/platform_data/android_battery.h>
 
 /* including start and stop bits */
 #define CMD_READ_SZ		8

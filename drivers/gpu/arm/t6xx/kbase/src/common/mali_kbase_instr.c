@@ -1,15 +1,12 @@
 /*
  *
- * (C) COPYRIGHT 2011-2013 ARM Limited. All rights reserved.
+ * (C) COPYRIGHT 2011-2012 ARM Limited. All rights reserved.
  *
- * This program is free software and is provided to you under the terms of the
- * GNU General Public License version 2 as published by the Free Software
- * Foundation, and any use by you of this program is subject to the terms
- * of such GNU licence.
+ * This program is free software and is provided to you under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation, and any use by you of this program is subject to the terms of such GNU licence.
  *
- * A copy of the licence is included with the program, and can also be obtained
- * from Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA  02110-1301, USA.
+ * A copy of the licence is included with the program, and can also be obtained from Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
 
@@ -65,32 +62,22 @@ STATIC mali_error kbase_instr_hwcnt_enable_internal(kbase_device *kbdev, kbase_c
 	kbasep_js_device_data *js_devdata;
 	u32 irq_mask;
 	int ret;
-	u64 shader_cores_needed;
 
 	KBASE_DEBUG_ASSERT(NULL != kctx);
 	KBASE_DEBUG_ASSERT(NULL != kbdev);
 	KBASE_DEBUG_ASSERT(NULL != setup);
 	KBASE_DEBUG_ASSERT(NULL == kbdev->hwcnt.suspended_kctx);
 
-	shader_cores_needed = kbase_pm_get_present_cores(kbdev, KBASE_PM_CORE_SHADER);
-
 	js_devdata = &kbdev->js_data;
 
 	/* alignment failure */
 	if ((setup->dump_buffer == 0ULL) || (setup->dump_buffer & (2048 - 1)))
-		goto out_err;
-
-	/* Override core availability policy to ensure all cores are available */
-	kbase_pm_ca_instr_enable(kbdev);
+		goto out;
 
 	/* Mark the context as active so the GPU is kept turned on */
 	/* A suspend won't happen here, because we're in a syscall from a userspace
 	 * thread. */
 	kbase_pm_context_active(kbdev);
-
-	/* Request the cores early on synchronously - we'll release them on any errors
-	 * (e.g. instrumentation already active) */
-	kbase_pm_request_cores_sync(kbdev, MALI_TRUE, shader_cores_needed);
 
 	spin_lock_irqsave(&kbdev->hwcnt.lock, flags);
 
@@ -104,7 +91,14 @@ STATIC mali_error kbase_instr_hwcnt_enable_internal(kbase_device *kbdev, kbase_c
 	if (kbdev->hwcnt.state != KBASE_INSTR_STATE_DISABLED) {
 		/* Instrumentation is already enabled */
 		spin_unlock_irqrestore(&kbdev->hwcnt.lock, flags);
-		goto out_unrequest_cores;
+		kbase_pm_context_idle(kbdev);
+		goto out;
+	}
+
+	if (MALI_ERROR_NONE != kbase_pm_request_cores(kbdev, kbase_pm_get_present_cores(kbdev, KBASE_PM_CORE_SHADER), kbase_pm_get_present_cores(kbdev, KBASE_PM_CORE_TILER))) {
+		spin_unlock_irqrestore(&kbdev->hwcnt.lock, flags);
+		kbase_pm_context_idle(kbdev);
+		goto out;
 	}
 
 	/* Enable interrupt */
@@ -139,25 +133,18 @@ STATIC mali_error kbase_instr_hwcnt_enable_internal(kbase_device *kbdev, kbase_c
 	kbasep_js_schedule_privileged_ctx(kbdev, kctx);
 
 	/* Configure */
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_CONFIG), (kctx->as_nr << PRFCNT_CONFIG_AS_SHIFT) | PRFCNT_CONFIG_MODE_OFF, kctx);
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_BASE_LO),     setup->dump_buffer & 0xFFFFFFFF, kctx);
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_BASE_HI),     setup->dump_buffer >> 32,        kctx);
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_JM_EN),       setup->jm_bm,                    kctx);
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_SHADER_EN),   setup->shader_bm,                kctx);
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_L3_CACHE_EN), setup->l3_cache_bm,              kctx);
-	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_MMU_L2_EN),   setup->mmu_l2_bm,                kctx);
-	/* Due to PRLAM-8186 we need to disable the Tiler before we enable the HW counter dump. */
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_BASE_LO), setup->dump_buffer & 0xFFFFFFFF, kctx);
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_BASE_HI), setup->dump_buffer >> 32, kctx);
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_JM_EN), setup->jm_bm, kctx);
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_SHADER_EN), setup->shader_bm, kctx);
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_L3_CACHE_EN), setup->l3_cache_bm, kctx);
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_MMU_L2_EN), setup->mmu_l2_bm, kctx);
 	if (kbase_hw_has_issue(kbdev, BASE_HW_ISSUE_8186))
 		kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_TILER_EN), 0, kctx);
-	else
-		kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_TILER_EN), setup->tiler_bm, kctx);
 
 	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_CONFIG), (kctx->as_nr << PRFCNT_CONFIG_AS_SHIFT) | PRFCNT_CONFIG_MODE_MANUAL, kctx);
+	kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_TILER_EN), setup->tiler_bm, kctx);
 
-	/* If HW has PRLAM-8186 we can now re-enable the tiler HW counters dump */
-	if (kbase_hw_has_issue(kbdev, BASE_HW_ISSUE_8186))
-		kbase_reg_write(kbdev, GPU_CONTROL_REG(PRFCNT_TILER_EN), setup->tiler_bm, kctx);
-	
 	spin_lock_irqsave(&kbdev->hwcnt.lock, flags);
 
 	if (kbdev->hwcnt.state == KBASE_INSTR_STATE_RESETTING) {
@@ -176,11 +163,8 @@ STATIC mali_error kbase_instr_hwcnt_enable_internal(kbase_device *kbdev, kbase_c
 	err = MALI_ERROR_NONE;
 
 	KBASE_DEBUG_PRINT_INFO(KBASE_CORE, "HW counters dumping set-up for context %p", kctx);
-	return err;
- out_unrequest_cores:
-	kbase_pm_unrequest_cores(kbdev, MALI_TRUE, shader_cores_needed);
-	kbase_pm_context_idle(kbdev);
- out_err:
+
+ out:
 	return err;
 }
 
@@ -261,9 +245,7 @@ mali_error kbase_instr_hwcnt_disable(kbase_context *kctx)
 	kbdev->hwcnt.kctx = NULL;
 	kbdev->hwcnt.addr = 0ULL;
 
-	kbase_pm_ca_instr_disable(kbdev);
-
-	kbase_pm_unrequest_cores(kbdev, MALI_TRUE, kbase_pm_get_present_cores(kbdev, KBASE_PM_CORE_SHADER));
+	kbase_pm_unrequest_cores(kbdev, kbase_pm_get_present_cores(kbdev, KBASE_PM_CORE_SHADER), kbase_pm_get_present_cores(kbdev, KBASE_PM_CORE_TILER));
 
 	spin_unlock_irqrestore(&kbdev->hwcnt.lock, flags);
 
@@ -612,5 +594,6 @@ void kbase_instr_hwcnt_resume(kbase_device *kbdev)
 		WARN(err != MALI_ERROR_NONE,
 		     "Failed to restore instrumented hardware counters on resume\n");
 	}
+
 }
 

@@ -290,7 +290,7 @@ static void *ion_exynos_heap_map_kernel(struct ion_heap *heap,
 
 	pages = vmalloc(sizeof(*pages) * num_pages);
 	if (!pages)
-		return ERR_PTR(-ENOMEM);
+		return NULL;
 
 	tmp_pages = pages;
 	for_each_sg(sgt->sgl, sgl, sgt->orig_nents, i) {
@@ -305,9 +305,6 @@ static void *ion_exynos_heap_map_kernel(struct ion_heap *heap,
 	vaddr = vmap(pages, num_pages, VM_USERMAP | VM_MAP, PAGE_KERNEL);
 
 	vfree(pages);
-
-	if (vaddr == NULL)
-		return ERR_PTR(-ENOMEM);
 
 	return vaddr + offset_in_page(sg_phys(sgt->sgl));
 }
@@ -486,15 +483,12 @@ static void *ion_exynos_contig_heap_map_kernel(struct ion_heap *heap,
 	int i;
 
 	if (!pages)
-		return ERR_PTR(-ENOMEM);
+		return 0;
 
 	for (i = 0; i < npages; i++)
 		pages[i] = phys_to_page(buffer->priv_phys + i * PAGE_SIZE);
 	buffer->vaddr = vmap(pages, npages, VM_MAP, PAGE_KERNEL);
 	vfree(pages);
-
-	if (buffer->vaddr == NULL)
-		return ERR_PTR(-ENOMEM);
 
 	return buffer->vaddr;
 }

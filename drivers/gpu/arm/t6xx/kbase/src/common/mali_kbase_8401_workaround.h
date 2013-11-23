@@ -13,22 +13,16 @@
 
 
 /**
- * @file mali_kbase_pm_metrics_dummy.c
- * Dummy Metrics for power management.
+ * @file mali_kbase_8401_workaround.h
+ * Functions related to working around BASE_HW_ISSUE_8401
  */
 
-#include <kbase/src/common/mali_kbase.h>
-#include <kbase/src/common/mali_kbase_pm.h>
+#ifndef _KBASE_8401_WORKAROUND_H_
+#define _KBASE_8401_WORKAROUND_H_
 
-void kbase_pm_register_vsync_callback(kbase_device *kbdev)
-{
-	KBASE_DEBUG_ASSERT(kbdev != NULL);
+mali_error kbasep_8401_workaround_init(kbase_device * const kbdev);
+void kbasep_8401_workaround_term(kbase_device *kbdev);
+void kbasep_8401_submit_dummy_job(kbase_device *kbdev, int js);
+mali_bool kbasep_8401_is_workaround_job(kbase_jd_atom *katom);
 
-	/* no VSync metrics will be available */
-	kbdev->pm.metrics.platform_data = NULL;
-}
-
-void kbase_pm_unregister_vsync_callback(kbase_device *kbdev)
-{
-	KBASE_DEBUG_ASSERT(kbdev != NULL);
-}
+#endif				/* _KBASE_8401_WORKAROUND_H_ */
