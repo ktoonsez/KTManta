@@ -92,10 +92,10 @@ unsigned int cpu_mhz_lvl_low = 0;
 unsigned int cpu_mhz_lvl_high = 0;
 unsigned int gpu_mhz_lvl_low = 0;
 unsigned int gpu_mhz_lvl_high = 0;
-//extern void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int cpu_mhz_lvl_low, unsigned int cpu_mhz_lvl_high, unsigned int gpu_mhz_lvl_low, unsigned int gpu_mhz_lvl_high);
-//extern void set_gpu_original(unsigned int gpu_original);
-//extern void get_batt_level(unsigned int* cpu_mhz_lvl, unsigned int* gpu_mhz_lvl);
-extern unsigned int get_cur_gpu_freq();
+extern void set_batt_mhz_info(unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int cpu_mhz_lvl_low, unsigned int cpu_mhz_lvl_high, unsigned int gpu_mhz_lvl_low, unsigned int gpu_mhz_lvl_high);
+extern void set_gpu_original(unsigned int gpu_original);
+extern void get_batt_level(unsigned int* cpu_mhz_lvl, unsigned int* gpu_mhz_lvl);
+extern unsigned int get_cur_gpu_freq(void);
 
 extern ssize_t hlpr_get_gpu_gov_table(char *buf);
 extern void hlpr_set_gpu_gov_table(int gpu_table[]);
@@ -539,7 +539,7 @@ static ssize_t store_scaling_max_freq_gpu(struct cpufreq_policy *policy, const c
 	{
 		gpu_max = value;
 		hlpr_set_min_max_G3D(gpu_min, gpu_max);
-		//set_gpu_original(gpu_max);
+		set_gpu_original(gpu_max);
 	}
 	else
 		return -EINVAL;
@@ -563,7 +563,7 @@ static ssize_t store_battery_ctrl_batt_lvl_low(struct cpufreq_policy *policy, co
 	if (input < 0 || input > 100)
 		input = 0;
 	batt_lvl_low = input;
-	//set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
 	return count;
 }
 
@@ -584,7 +584,7 @@ static ssize_t store_battery_ctrl_batt_lvl_high(struct cpufreq_policy *policy, c
 	if (input < 0 || input > 100)
 		input = 0;
 	batt_lvl_high = input;
-	//set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
 	return count;
 }
 
@@ -607,7 +607,7 @@ static ssize_t store_battery_ctrl_cpu_mhz_lvl_low(struct cpufreq_policy *policy,
 	if (input < 100000 || input > 2100000)
 		input = 0;
 	cpu_mhz_lvl_low = input;
-	//set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
 	return count;
 }
 
@@ -630,7 +630,7 @@ static ssize_t store_battery_ctrl_cpu_mhz_lvl_high(struct cpufreq_policy *policy
 	if (input < 100000 || input > 2100000)
 		input = 0;
 	cpu_mhz_lvl_high = input;
-	//set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
 	return count;
 }
 
@@ -653,7 +653,7 @@ static ssize_t store_battery_ctrl_gpu_mhz_lvl_low(struct cpufreq_policy *policy,
 	if (input < 100 || input > FREQ_STEPS_GPU_MAX)
 		input = 0;
 	gpu_mhz_lvl_low = input;
-	//set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
 	return count;
 }
 
@@ -676,7 +676,7 @@ static ssize_t store_battery_ctrl_gpu_mhz_lvl_high(struct cpufreq_policy *policy
 	if (input < 100 || input > FREQ_STEPS_GPU_MAX)
 		input = 0;
 	gpu_mhz_lvl_high = input;
-	//set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
+	set_batt_mhz_info(batt_lvl_low, batt_lvl_high, cpu_mhz_lvl_low, cpu_mhz_lvl_high, gpu_mhz_lvl_low, gpu_mhz_lvl_high);
 	return count;
 }
 
@@ -839,7 +839,7 @@ void screen_on_off(struct work_struct *notification_off_work)
 			new_policy.max = Lscreen_off_scaling_mhz_orig;		
 		else
 			new_policy.max = 1700000;
-		//get_batt_level(&cpu_mhz_lvl, &gpu_mhz_lvl);
+		get_batt_level(&cpu_mhz_lvl, &gpu_mhz_lvl);
 		if (cpu_mhz_lvl > 0)
 			new_policy.max = cpu_mhz_lvl;
 					
