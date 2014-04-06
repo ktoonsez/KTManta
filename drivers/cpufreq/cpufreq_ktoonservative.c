@@ -330,7 +330,7 @@ static ssize_t store_up_freq_threshold_hotplug(struct kobject *a, struct attribu
 
 	/* cannot be lower than 100 otherwise freq will not fall */
 	if (ret != 1 || input < 100 ||
-			input >= policy->max)
+			input >= 2100)
 		return -EINVAL;
 
 	dbs_tuners_ins.up_freq_threshold_hotplug = input * 1000;
@@ -378,7 +378,7 @@ static ssize_t store_down_freq_threshold_hotplug(struct kobject *a, struct attri
 
 	/* cannot be lower than 100 otherwise freq will not fall */
 	if (ret != 1 || input < 100  ||
-			input >= policy->max)
+			input >= 2100)
 		return -EINVAL;
 
 	dbs_tuners_ins.down_freq_threshold_hotplug = input * 1000;
