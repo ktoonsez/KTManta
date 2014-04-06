@@ -221,6 +221,18 @@ static ssize_t show_boost_cpu(struct kobject *kobj,
 	return sprintf(buf, "%u\n", dbs_tuners_ins.boost_cpu / 1000);
 }
 
+static ssize_t show_up_freq_threshold_hotplug(struct kobject *kobj,
+				      struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", dbs_tuners_ins.up_freq_threshold_hotplug/ 1000);
+}
+
+static ssize_t show_down_freq_threshold_hotplug(struct kobject *kobj,
+				      struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", dbs_tuners_ins.down_freq_threshold_hotplug/ 1000);
+}
+
 /* cpufreq_ktoonservative Governor Tunables */
 #define show_one(file_name, object)					\
 static ssize_t show_##file_name						\
@@ -243,9 +255,6 @@ show_one(disable_hotplugging, disable_hotplugging);
 show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
-show_one(up_freq_threshold_hotplug, up_freq_threshold_hotplug);
-show_one(down_freq_threshold_hotplug, down_freq_threshold_hotplug);
-
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
 					  struct attribute *b,
