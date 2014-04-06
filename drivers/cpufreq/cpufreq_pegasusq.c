@@ -476,7 +476,7 @@ static ssize_t show_sampling_rate_min(struct kobject *kobj,
 static ssize_t show_boostpulse_value(struct kobject *kobj,
 				      struct attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", Lboostpulse_value / 1000);
+	return sprintf(buf, "%u\n", Lboostpulse_value);
 }
 
 define_one_global_ro(sampling_rate_min);
