@@ -62,8 +62,8 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	cp -R ../META-INF .
 	rm ramdisk.gz
 	rm zImage
-	rm ../KTManta*.zip
-	zip -r ../KTManta-$curdate.zip .
+	rm ../KTManta_F2FS*.zip
+	zip -r ../KTManta_F2FS-$curdate.zip .
 	cd $KERNELDIR
 else
 	echo "KERNEL DID NOT BUILD! no zImage exist"
